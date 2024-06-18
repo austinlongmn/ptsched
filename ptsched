@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+import argparse
+import re
+import datetime
+import os
+import sys
+
+# debug
+import json
+
+option_parser = argparse.ArgumentParser(
+	prog="ptsched",
+	description="ptsched schedules your class work into your calendar."
+)
+
+# Syntax of schedule file
+
+# 20 May 2024 - 26 May 2024 ~ Date range must be at very first line of file
+# ~ Comments begin with a tilde ("~")
+
+# # ABC0000 Course Name ~ Name of course
+
+# - Mon 20 ~ Tasks date
+# Task 1
+# Task 2
+# Task 3 ~ Put tasks under date
+
+# - Tue 21 ~ New date
+# Task 4
+
+# # XYZ0000 New Course Name
+
+# - Mon 20
+# Task ABC
+
+option_parser.add_argument("-l", "--launch-shortcut", help="Launch the shortcut to create events.")
+option_parser.add_argument("-D", "--debug", action="store_true", help="Display extra debug information")
+option_parser.add_argument("filename", nargs="?")
+
+args = option_parser.parse_args()
+
+if (args.launch_shortcut != None):
+	exit(os.system("echo \"%s\" | shortcuts run ptsched --input-path -" % (os.path.abspath(args.launch_shortcut))))
+
+if (args.filename == None):
+	print("Need a schedule file to operate on.", file=sys.stderr)
+	exit(1)
+
+filename = args.filename
+
+
+class PTSchedException(Exception):
+	pass
+
+
+class PTSchedParseException(PTSchedException):
+	pass
+
+
+class PTSchedValidationException(PTSchedException):
+	pass
+
+
+def parse_date(day_of_week, day_number, range_start, range_end, lineno):
+	if (range_start.month == range_end.month):
+		month = range_start.month
+	else:
+		month = range_start.month if day_number >= range_start.day else range_end.month
+
+	if (range_start.year == range_end.year):
+		year = range_start.year
+	else:
+		year = range_start.year if day_number >= range_start.day else range_end.year
+
+	weekday = -1
+	if (day_of_week == "Mon"):
+		weekday = 0
+	elif (day_of_week == "Tue"):
+		weekday = 1
+	elif (day_of_week == "Wed"):
+		weekday = 2
+	elif (day_of_week == "Thu"):
+		weekday = 3
+	elif (day_of_week == "Fri"):
+		weekday = 4
+	elif (day_of_week == "Sat"):
+		weekday = 5
+	elif (day_of_week == "Sun"):
+		weekday = 6
+	
+	result = datetime.date(year, month, day_number)
+	if (weekday == -1):
+		raise PTSchedParseException("Invalid day of week \"%s\" at line %d" % (day_of_week, lineno))
+	if (result.weekday() != weekday):
+		raise PTSchedValidationException("Day of week \"%s\" does not match date at line %d" % (day_of_week, lineno))
+	if (not (result >= range_start and result <= range_end)):
+		raise PTSchedValidationException("Date not in range at line %d" % lineno)
+	
+	return result
+
+
+def parse_file(file):
+	result = {}
+	result["courses"] = {}
+
+	is_parsing_dates = True
+	course_name = None
+	date = None
+
+	lineno = 1
+
+	line = file.readline()
+	while (line != ""):
+		line = re.sub(r"\s?~.+", "", line)
+		line = line.removesuffix("\n")
+		if (line != ""):
+			if (is_parsing_dates):
+				re_result = re.match(r"^\s*(.+?)\s*[-–—]\s*(.+?)\s*$", line)
+				try:
+					result["start_date"] = datetime.datetime.strptime(re_result.group(1), "%d %B %Y").date()
+					result["end_date"] = datetime.datetime.strptime(re_result.group(2), "%d %B %Y").date()
+				except (ValueError, AttributeError):
+					raise PTSchedParseException("Invalid dates at line %d: %s" % (lineno, line.removesuffix("\n")))
+				
+				s_date = result["start_date"]
+				e_date = result["end_date"]
+
+				if (s_date > e_date):
+					raise PTSchedValidationException("Start date cannot exceed end date at line %d" % (lineno))
+				
+				if (s_date.month != e_date.month):
+					if ((e_date.month - s_date.month) > 1 or e_date.day >= s_date.day):
+						raise PTSchedValidationException("Date range cannot exceed 1 month at line %d" % (lineno))
+
+				is_parsing_dates = False
+			else:
+				re_result = re.match(r"^#\s+(.+?)\s*$", line)
+				if (re_result != None):
+					course_name = re_result.group(1)
+					if (course_name in result.keys()):
+						raise PTSchedValidationException("Cannot redefine course \"%s\": line %d" % (course_name, lineno))
+					result["courses"][course_name] = {}
+				elif (course_name != None):
+					re_result = re.match(r"^-\s+(.+?)\s+(\d?\d)\s*$", line)
+					if (re_result != None):
+						try:
+							date = parse_date(re_result.group(1), int(re_result.group(2)), result["start_date"], result["end_date"], lineno)
+						except (ValueError, AttributeError):
+							raise PTSchedParseException("Invalid date at line %d: %s" % (lineno, line.removesuffix("\n")))
+						date_str = str(date)
+						if (date_str in result["courses"][course_name].keys()):
+							raise PTSchedValidationException("Cannot redefine day %s for course \"%s\": line %d" % (date_str, course_name, lineno))
+						result["courses"][course_name][date_str] = []
+					elif (date != None):
+						date_str = str(date)
+						result["courses"][course_name][date_str].append(line)
+					else:
+						raise PTSchedParseException("Expected date, but line did not match: line %d" % lineno)
+				else:
+					raise PTSchedParseException("Expected course name, but line did not match: line %d" % lineno)
+
+
+		line = file.readline()
+		lineno += 1
+	
+	return result
+
+
+schedule = None
+file = None
+try:
+	file = open(filename)
+except OSError as error:
+	print("Error when opening file:", error, file=sys.stderr)
+	exit(1)
+
+
+try:
+	schedule = parse_file(file)
+except PTSchedParseException as error:
+	print("Error parsing file:", error, file=sys.stderr)
+	exit(1)
+except PTSchedValidationException as error:
+	print("Validation error:", error, file=sys.stderr)
+	exit(1)
+except PTSchedException as error:
+	print("Error creating schedule:", error, file=sys.stderr)
+	exit(1)
+finally:
+	file.close()
+
+
+if args.debug: print(json.dumps(schedule, default=str, indent=2))
+
+events = {}
+
+for course in sorted(schedule["courses"].keys()):
+	for day in sorted(schedule["courses"][course].keys()):
+		if (not (day in events.keys())):
+			events[day] = ""
+		events[day] += course + ":\n"
+		for task in schedule["courses"][course][day]:
+			events[day] += task + "\n"
+		events[day] += "\n"
+
+for day in events:
+	events[day] = events[day].removesuffix("\n\n")
+	print(day, ":\n\n", events[day], "\n", sep="")

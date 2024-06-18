@@ -33,9 +33,10 @@ option_parser = argparse.ArgumentParser(
 # - Mon 20
 # Task ABC
 
-option_parser.add_argument("-l", "--launch-shortcut", help="Launch the shortcut to create events.")
+launch_group = option_parser.add_argument_group("launch", description="Launch the shortcut to add items to the calendar")
+launch_group.add_argument("-l", "--launch-shortcut", help="The file to use")
 option_parser.add_argument("-D", "--debug", action="store_true", help="Display extra debug information")
-option_parser.add_argument("filename", nargs="?")
+option_parser.add_argument("filename", help="The file to output to (default is STDOUT)", nargs="?")
 
 args = option_parser.parse_args()
 

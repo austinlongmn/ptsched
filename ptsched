@@ -35,6 +35,7 @@ option_parser = argparse.ArgumentParser(
 
 launch_group = option_parser.add_argument_group("launch", description="Launch the shortcut to add items to the calendar")
 launch_group.add_argument("-l", "--launch-shortcut", help="The file to use")
+option_parser.add_argument("-d", "--dry-run", action="store_true", help="Parse file, but do not output anything.")
 option_parser.add_argument("-D", "--debug", action="store_true", help="Display extra debug information")
 option_parser.add_argument("filename", help="The file to output to (default is STDOUT)", nargs="?")
 
@@ -43,7 +44,7 @@ args = option_parser.parse_args()
 if (args.launch_shortcut != None):
 	exit(os.system("echo \"%s\" | shortcuts run ptsched --input-path -" % (os.path.abspath(args.launch_shortcut))))
 
-if (args.filename == None):
+if (args.filename == None and not args.dry_run):
 	print("Need a schedule file to operate on.", file=sys.stderr)
 	exit(1)
 
@@ -169,6 +170,7 @@ def parse_file(file):
 
 schedule = None
 file = None
+
 try:
 	file = open(filename)
 except OSError as error:
@@ -192,6 +194,8 @@ finally:
 
 
 if args.debug: print(json.dumps(schedule, default=str, indent=2))
+
+if args.dry_run: exit(0)
 
 events = {}
 

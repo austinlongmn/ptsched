@@ -115,6 +115,7 @@ def parse_file(file):
 	while (line != ""):
 		line = re.sub(r"\s?~.+", "", line)
 		line = line.removesuffix("\n")
+		line = line.strip()
 		if (line != ""):
 			if (is_parsing_dates):
 				re_result = re.match(r"^\s*(.+?)\s*[-–—]\s*(.+?)\s*$", line)

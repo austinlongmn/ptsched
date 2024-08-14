@@ -1,0 +1,15 @@
+OUTFILES:=$(addsuffix .out.txt,$(addprefix out/,$(wildcard *.ptsched)))
+CHANGED_FILES:=$(shell git add \*.ptsched -n)
+
+all: .git $(OUTFILES)
+
+out/%.ptsched.out.txt: %.ptsched
+	ptsched -l "$<"
+	@ptsched "$<" > $@
+
+
+.git: $(OUTFILES)
+	@if [ "$(CHANGED_FILES)" != "" ]; then\
+		git add *.ptsched;\
+		git commit -m "Schedule edit at $(shell date)";\
+	fi

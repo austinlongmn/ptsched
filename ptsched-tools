@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+import os
+
+ptsched_Makefile_path = "/Users/austinlong/Documents/Coding/Tools/ptsched/support/ptsched-Makefile"
+
+subcommands= [
+	"init",
+]
+
+option_parser = argparse.ArgumentParser(
+	prog="ptsched-tools",
+	description="Helpful tools to accelerate scheduling with ptsched"
+)
+
+option_parser.add_argument("subcommand", help="tool to use. options are %s" % subcommands)
+args = option_parser.parse_args()
+
+if args.subcommand == "init":
+	exit_status = os.system("cp \"%s\" ./Makefile" % ptsched_Makefile_path)
+	if exit_status: exit(1)
+	exit_status = os.system("git init")
+	if exit_status: exit(1)
+else:
+	print("Error: invalid subcommand. Valid subcommands are %s" % subcommands, file=sys.stderr)
+	exit(1)

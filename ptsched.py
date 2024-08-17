@@ -28,16 +28,6 @@ import json
 # - Mon 20
 # Task ABC
 
-subcommands = [
-	"parse",
-	"schedule"
-]
-
-valid_subcommand_description = ""
-for subcommand in subcommands:
-	valid_subcommand_description += subcommand + ", "
-valid_subcommand_description = valid_subcommand_description.removesuffix(", ")
-
 # MARK: Helper constructs
 class PTSchedException(Exception):
 	pass
@@ -87,8 +77,26 @@ def parse_date(day_of_week, day_number, range_start, range_end, lineno):
 	
 	return result
 
+# MARK: init
+# TODO: make this function initialize various essential files
+def init(arguments):
+	args = schedule_argument_parser.parse_args(arguments)
+
+	try:
+		with open(".ptscheddir", 'x') as directory_file:
+			directory_file.write("Hello!\n")
+	except Exception as error:
+		print(error)
+
+	
+
 # MARK: schedule
+# TODO: write this function to act like the old Makefile solution
 def schedule(arguments):
+	pass
+
+# MARK: syscal
+def syscal(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Launches a helper program to write ptsched schedules to the system calendar")
 	schedule_argument_parser.add_argument("filename", help="The schedule file to use")
 	args = schedule_argument_parser.parse_args(arguments)
@@ -241,6 +249,18 @@ def parse(arguments):
 		if outfile != sys.stdout:
 			outfile.close()
 
+subcommands = {
+	"parse":    parse,
+	"init":     init,
+	"syscal":   syscal,
+	"schedule": schedule
+}
+
+valid_subcommand_description = ""
+for subcommand in subcommands:
+	valid_subcommand_description += subcommand + ", "
+valid_subcommand_description = valid_subcommand_description.removesuffix(", ")
+
 # MARK: Main
 def main():
 	# this is for displaying error and help messages
@@ -267,12 +287,7 @@ def main():
 		print("Error: invalid subcommand \"%s\". Valid subcommands are %s" % (subcommand, subcommands), file=sys.stderr)
 		exit(1)
 
-	if subcommand == "parse":
-		subcommand_function = parse
-	if subcommand == "schedule":
-		subcommand_function = schedule
-
-	subcommand_function(arguments)
+	subcommands[subcommand](arguments)
 
 if __name__ == "__main__":
 	main()

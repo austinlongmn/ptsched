@@ -80,6 +80,7 @@ def parse_date(day_of_week, day_number, range_start, range_end, lineno):
 # MARK: init
 # TODO: make this function initialize various essential files
 def init(arguments):
+	schedule_argument_parser = argparse.ArgumentParser("ptsched init", description="Initialize a ptsched directory")
 	args = schedule_argument_parser.parse_args(arguments)
 
 	try:

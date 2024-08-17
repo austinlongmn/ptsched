@@ -29,3 +29,4 @@ Temporary Items
 out
 dev
 test-workspace
+__pycache__

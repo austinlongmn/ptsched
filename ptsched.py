@@ -7,6 +7,7 @@ import sys
 import uuid
 import json
 import subprocess
+import multiprocessing
 
 # Syntax of schedule file
 
@@ -129,12 +130,16 @@ def syscal(arguments):
 	os.remove(output_tmp_filename)
 
 	days = re.finditer(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
-	for day in days:
-		re_result = re.match(r"(\d{4})-(\d{2})-(\d{2})", day[1])
+	
+	with multiprocessing.Pool(5) as pool:
+		pool.map(write_to_calendar, [(x[1], x[2]) for x in days])
+	
+def write_to_calendar(day):
+		re_result = re.match(r"(\d{4})-(\d{2})-(\d{2})", day[0])
 		time = re_result[2] + "/" + re_result[3] + "/" + re_result[1] + " 12:00:00 AM"
 		c_input_filename = tmp_filename()
 		with open(c_input_filename, "w") as file:
-			file.write(day[2].removesuffix("\n"))
+			file.write(day[1].removesuffix("\n"))
 		subprocess.check_output(["ptsched-event-helper", c_input_filename.replace("/", ":").removeprefix(":"), time])
 		os.remove(c_input_filename)
 

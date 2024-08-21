@@ -1,5 +1,5 @@
 on run argv
-	set details to item 1 of argv
+	set details to readFile(item 1 of argv)
 	set eventDate to date (item 2 of argv)
 
 	tell application "iCal"
@@ -15,3 +15,11 @@ on run argv
 		end tell
 	end tell
 end run
+
+on readFile(theFile)
+    -- Convert the file to a string
+    set theFile to theFile as string
+ 
+    -- Read the file and return its contents
+    return read file theFile
+end readFile

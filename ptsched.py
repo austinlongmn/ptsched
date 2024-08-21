@@ -5,9 +5,8 @@ import datetime
 import os
 import sys
 import uuid
-
-# debug
 import json
+import subprocess
 
 # Syntax of schedule file
 
@@ -89,11 +88,14 @@ def init(arguments):
 			ptsched_directory = {}
 			directory_id = uuid.uuid4().hex.upper()
 			ptsched_directory["directoryID"] = directory_id
-			ptsched_directory["files"] = {}
+			ptsched_directory["files"] = []
 
 			for file in scan():
-				ptsched_directory["files"][file] = {}
-
+				ptsched_directory["files"].append({
+					"filename": file,
+					"lastScheduled": None,
+					"eventID": None
+				})
 
 			json.dump(ptsched_directory, directory_file)
 	except FileExistsError as error:
@@ -116,16 +118,28 @@ def schedule(arguments):
 
 # MARK: syscal
 def syscal(arguments):
-	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Launches a helper program to write ptsched schedules to the system calendar")
+	schedule_argument_parser = argparse.ArgumentParser("ptsched syscal", description="Launches a helper program to write ptsched schedules to the system calendar")
 	schedule_argument_parser.add_argument("filename", help="The schedule file to use")
 	args = schedule_argument_parser.parse_args(arguments)
-	abs_path = os.path.abspath(args.filename)
 
-	# The following is a security risk. Do not share this program.
-	# TODO: replace this with a Swift helper program
-	exit_status = os.system("echo \"%s\" | shortcuts run ptsched --input-path -" % abs_path)
+	output_tmp_filename = tmp_filename()
+	parse(["-o", output_tmp_filename, args.filename])
+	with open(output_tmp_filename) as file:
+		parse_output = file.read()
+	os.remove(output_tmp_filename)
 
-	exit(exit_status)
+	days = re.finditer(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
+	for day in days:
+		re_result = re.match(r"(\d{4})-(\d{2})-(\d{2})", day[1])
+		time = re_result[2] + "/" + re_result[3] + "/" + re_result[1] + " 12:00:00 AM"
+		c_input_filename = tmp_filename()
+		with open(c_input_filename, "w") as file:
+			file.write(day[2].removesuffix("\n"))
+		subprocess.check_output(["ptsched-event-helper", c_input_filename.replace("/", ":").removeprefix(":"), time])
+		os.remove(c_input_filename)
+
+def tmp_filename():
+	return subprocess.check_output(["mktemp", "-t", "ptsched"]).decode("utf-8").removesuffix("\n")
 
 def parse_dates(line, result, lineno):
 	re_result = re.match(r"^\s*(.+?)\s*[-–—]\s*(.+?)\s*$", line)
@@ -161,6 +175,8 @@ def parse_file(file):
 		line = re.sub(r"\s?~.+", "", line)
 		line = line.removesuffix("\n")
 		line = line.strip()
+		if (re.match(r"^\d{4}-\d{2}-\d{2}:$", line)):
+			raise PTSchedParseException("Putting dates in this format with a colon at the end of the line could cause conflicts: line %d" % lineno)
 		if (line != ""):
 			if (is_parsing_dates):
 				parse_dates(line, result, lineno)

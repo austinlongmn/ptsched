@@ -4,6 +4,7 @@ import re
 import datetime
 import os
 import sys
+import uuid
 
 # debug
 import json
@@ -85,11 +86,28 @@ def init(arguments):
 
 	try:
 		with open(".ptscheddir", 'x') as directory_file:
-			directory_file.write("Hello!\n")
-	except Exception as error:
-		print(error)
+			ptsched_directory = {}
+			directory_id = uuid.uuid4().hex.upper()
+			ptsched_directory["directoryID"] = directory_id
+			ptsched_directory["files"] = {}
 
-	
+			for file in scan():
+				ptsched_directory["files"][file] = {}
+
+
+			json.dump(ptsched_directory, directory_file)
+	except FileExistsError as error:
+		print("A ptsched directory already exists in this folder.", file=sys.stderr)
+		exit(17)
+
+def scan():
+	result = []
+	for (directory, dirs, files) in os.walk("."):
+		for file in files:
+			if file.endswith(".ptsched"):
+				result.append((directory + "/" + file).removeprefix("./"))
+	return result
+
 
 # MARK: schedule
 # TODO: write this function to act like the old Makefile solution

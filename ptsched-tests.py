@@ -43,7 +43,7 @@ class Test_ptsched(unittest.TestCase):
 
 	def get_input_and_expected_outputs(self, suffix, criteria):
 		result = []
-		for (dir, _, files) in os.walk("test-workspace/input"):
+		for (dir, _, files) in os.walk("test-data/input"):
 			if "expected-output" in dir or "out" in dir or not criteria in dir:
 				continue
 			for file in files:
@@ -52,6 +52,7 @@ class Test_ptsched(unittest.TestCase):
 				input_filename = dir + "/" + file
 				test_directory = "%s%s%s%s%s" % (dir.replace("input/", "expected-output/"), "/", file, "/", suffix)
 				result.append((input_filename, test_directory))
+		self.assertNotEqual(len(result), 0)
 		return result
 
 if __name__ == "__main__":

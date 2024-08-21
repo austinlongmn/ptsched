@@ -8,6 +8,7 @@ import uuid
 import json
 import subprocess
 import multiprocessing
+import time
 
 # Syntax of schedule file
 
@@ -91,13 +92,8 @@ def init(arguments):
 			ptsched_directory["directoryID"] = directory_id
 			ptsched_directory["files"] = []
 
-			for file in scan():
-				ptsched_directory["files"].append({
-					"filename": file,
-					"lastScheduled": None,
-					"eventID": None
-				})
-
+			update_directory(ptsched_directory)
+			
 			json.dump(ptsched_directory, directory_file)
 	except FileExistsError as error:
 		print("A ptsched directory already exists in this folder.", file=sys.stderr)
@@ -106,6 +102,8 @@ def init(arguments):
 def scan():
 	result = []
 	for (directory, dirs, files) in os.walk("."):
+		if ".ptschedignore" in files:
+			continue
 		for file in files:
 			if file.endswith(".ptsched"):
 				result.append((directory + "/" + file).removeprefix("./"))
@@ -115,7 +113,52 @@ def scan():
 # MARK: schedule
 # TODO: write this function to act like the old Makefile solution
 def schedule(arguments):
-	pass
+	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Schedules changed .ptsched files into your calendar via syscal")
+	schedule_argument_parser.parse_args(arguments)
+
+	try:
+		with open(".ptscheddir") as directory_file:
+			directory_info = json.load(directory_file)
+	except FileNotFoundError:
+		print("No initialized ptsched directory.", file=sys.stderr)
+		exit(1)
+
+	update_directory(directory_info)
+
+	files = directory_info["files"]
+	c_args = []
+	for idx in range(0, len(files)):
+		c_args.append((
+			files[idx]["filename"],
+			files[idx]["lastScheduled"],
+			idx
+		))
+
+	with multiprocessing.Pool(5) as pool:
+		result = pool.map(syscal_if_needed, c_args)
+	
+	for file_results in result:
+		if file_results[0] != None:
+			files[file_results[1]]["lastScheduled"] = time.time()
+	
+	with open(".ptscheddir", "w") as directory_file:
+		json.dump(directory_info, directory_file)
+
+def syscal_if_needed(file_info_and_id): # (filename, schedule date, id)
+	if file_info_and_id[1] == None or os.path.getmtime(file_info_and_id[0]) > float(file_info_and_id[1]):
+		print("ptsched syscal", file_info_and_id[0])
+		syscal([file_info_and_id[0]])
+		return (time.time(), file_info_and_id[2])
+	return (None, file_info_and_id[2])
+
+def update_directory(current):
+	files = set(scan())
+	new = files.difference([x["filename"] for x in current["files"]])
+	for file in new:
+		current["files"].append({
+			"filename": file,
+			"lastScheduled": None
+		})
 
 # MARK: syscal
 def syscal(arguments):
@@ -131,8 +174,9 @@ def syscal(arguments):
 
 	days = re.finditer(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
 	
-	with multiprocessing.Pool(5) as pool:
-		pool.map(write_to_calendar, [(x[1], x[2]) for x in days])
+	new_days = [(x[1], x[2]) for x in days]
+	for day in new_days:
+		write_to_calendar(day)
 	
 def write_to_calendar(day):
 		re_result = re.match(r"(\d{4})-(\d{2})-(\d{2})", day[0])
@@ -142,6 +186,7 @@ def write_to_calendar(day):
 			file.write(day[1].removesuffix("\n"))
 		subprocess.check_output(["ptsched-event-helper", c_input_filename.replace("/", ":").removeprefix(":"), time])
 		os.remove(c_input_filename)
+		print(time.removesuffix(" 12:00:00 AM"))
 
 def tmp_filename():
 	return subprocess.check_output(["mktemp", "-t", "ptsched"]).decode("utf-8").removesuffix("\n")

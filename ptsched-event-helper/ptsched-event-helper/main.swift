@@ -13,9 +13,7 @@ func printToSTDERR(_ message: String) {
 	try! FileHandle.standardError.write(contentsOf: (message + "\n").data(using: .utf8)!)
 }
 
-let envValue = ProcessInfo.processInfo.environment["PTSCHED_DEBUG_CALENDAR"]
-
-let calendarTitle = envValue != "" ? envValue : "Course Work"
+let calendarTitle = ProcessInfo.processInfo.environment["PTSCHED_DEBUG_CALENDAR"] ?? "Course Work"
 let defaultNewEventTitle = "Course Work"
 
 // MARK: main function

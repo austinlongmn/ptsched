@@ -1,11 +1,11 @@
 build: test out/ptsched out/ptsched-event-helper
 
-deploy: test ~/bin/ptsched ~/bin/ptsched-event-helper
+deploy: ~/bin/ptsched ~/bin/ptsched-event-helper
 
 test: ptsched.py ptsched-tests.py
 	./ptsched-tests.py
 
-interactive: build test
+interactive: build
 	dev/test
 
 ~/bin/%: out/%

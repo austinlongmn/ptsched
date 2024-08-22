@@ -80,7 +80,6 @@ def parse_date(day_of_week, day_number, range_start, range_end, lineno):
 	return result
 
 # MARK: init
-# TODO: make this function initialize various essential files
 def init(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched init", description="Initialize a ptsched directory")
 	args = schedule_argument_parser.parse_args(arguments)
@@ -111,7 +110,6 @@ def scan():
 
 
 # MARK: schedule
-# TODO: write this function to act like the old Makefile solution
 def schedule(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Schedules changed .ptsched files into your calendar via syscal")
 	schedule_argument_parser.parse_args(arguments)
@@ -173,20 +171,20 @@ def syscal(arguments):
 	os.remove(output_tmp_filename)
 
 	days = re.finditer(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
+
+	writing_subprocess = subprocess.Popen("ptsched-event-helper", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	id = 0
+	for day in days:
+		write_to_calendar(id, day[1], day[2], writing_subprocess.stdin)
+		id += 1
+
+	writing_subprocess.stdin.flush()
+	writing_subprocess.stdin.close()
+	writing_subprocess.wait()
 	
-	new_days = [(x[1], x[2]) for x in days]
-	for day in new_days:
-		write_to_calendar(day)
-	
-def write_to_calendar(day):
-		re_result = re.match(r"(\d{4})-(\d{2})-(\d{2})", day[0])
-		time = re_result[2] + "/" + re_result[3] + "/" + re_result[1] + " 12:00:00 AM"
-		c_input_filename = tmp_filename()
-		with open(c_input_filename, "w") as file:
-			file.write(day[1].removesuffix("\n"))
-		subprocess.check_output(["ptsched-event-helper", c_input_filename.replace("/", ":").removeprefix(":"), time])
-		os.remove(c_input_filename)
-		print(time.removesuffix(" 12:00:00 AM"))
+def write_to_calendar(id, date, contents, subprocess_input):
+	subprocess_input.write(("%d\nUPDATE\n%s\n%s\nEND REQUEST\n" % (id, date, contents.removesuffix("\n"))).encode())
+	subprocess_input.flush()
 
 def tmp_filename():
 	return subprocess.check_output(["mktemp", "-t", "ptsched"]).decode("utf-8").removesuffix("\n")

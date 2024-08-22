@@ -29,3 +29,5 @@ Temporary Items
 out
 dev
 __pycache__
+
+ptsched-event-helper/build

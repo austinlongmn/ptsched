@@ -14,9 +14,8 @@ interactive: build test
 out/ptsched: ptsched.py
 	cp ptsched.py out/ptsched
 
-out/ptsched-event-helper: event-helper.applescript
-	@echo "#!/usr/bin/env osascript" > out/ptsched-event-helper
-	osacompile -o /dev/stdout event-helper.applescript >> out/ptsched-event-helper
-	@chmod u+x out/ptsched-event-helper
+out/ptsched-event-helper: ptsched-event-helper/ptsched-event-helper/main.swift
+	xcodebuild -project ptsched-event-helper/ptsched-event-helper.xcodeproj
+	cp ptsched-event-helper/build/Release/ptsched-event-helper out/ptsched-event-helper
 
 .PHONY: test

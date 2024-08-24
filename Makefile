@@ -1,6 +1,6 @@
 build: test out/ptsched out/ptsched-event-helper
 
-deploy: ~/bin/ptsched ~/bin/ptsched-event-helper
+deploy: build ~/bin/ptsched ~/bin/ptsched-event-helper
 
 test: ptsched.py ptsched-tests.py
 	./ptsched-tests.py

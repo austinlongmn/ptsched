@@ -135,9 +135,15 @@ def schedule(arguments):
 	with multiprocessing.Pool(5) as pool:
 		result = pool.map(syscal_if_needed, c_args)
 	
+	did_change_files = False
 	for file_results in result:
 		if file_results[0] != None:
 			files[file_results[1]]["lastScheduled"] = time.time()
+			did_change_files = True
+	
+	if did_change_files:
+		os.system("git add \\*.ptsched")
+		os.system("git commit -m \"Schedule edit at %s\"" % datetime.datetime.now().strftime('%a %d %b %Y, %I:%M %p'))
 	
 	with open(".ptscheddir", "w") as directory_file:
 		json.dump(directory_info, directory_file)

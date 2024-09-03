@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A66E093C2C77C4A300A22363 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66E093B2C77C4A300A22363 /* main.swift */; };
+		A66E093C2C77C4A300A22363 /* ptsched-event-helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66E093B2C77C4A300A22363 /* ptsched-event-helper.swift */; };
 		A66E09452C77C90D00A22363 /* ptsched-event-helper in CopyFiles */ = {isa = PBXBuildFile; fileRef = A66E09382C77C4A300A22363 /* ptsched-event-helper */; };
 /* End PBXBuildFile section */
 
@@ -26,7 +26,7 @@
 
 /* Begin PBXFileReference section */
 		A66E09382C77C4A300A22363 /* ptsched-event-helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "ptsched-event-helper"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A66E093B2C77C4A300A22363 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A66E093B2C77C4A300A22363 /* ptsched-event-helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ptsched-event-helper.swift"; sourceTree = "<group>"; };
 		A66E09422C77C67000A22363 /* ptsched-event-helper.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "ptsched-event-helper.entitlements"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -61,7 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				A66E09422C77C67000A22363 /* ptsched-event-helper.entitlements */,
-				A66E093B2C77C4A300A22363 /* main.swift */,
+				A66E093B2C77C4A300A22363 /* ptsched-event-helper.swift */,
 			);
 			path = "ptsched-event-helper";
 			sourceTree = "<group>";
@@ -93,7 +93,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1540;
+				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1540;
 				TargetAttributes = {
 					A66E09372C77C4A300A22363 = {
@@ -124,7 +124,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A66E093C2C77C4A300A22363 /* main.swift in Sources */,
+				A66E093C2C77C4A300A22363 /* ptsched-event-helper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

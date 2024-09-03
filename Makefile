@@ -1,21 +1,28 @@
-build: test out/ptsched out/ptsched-event-helper
+TESTS := ptsched-tests.py
+OUTFILES := ptsched ptsched-event-helper
+OUTFILES_INSTALL := $(addprefix ~/bin/, $(OUTFILES))
+OUTFILES_BUILD := $(addprefix out/bin/, $(OUTFILES))
 
-deploy: build ~/bin/ptsched ~/bin/ptsched-event-helper
+all: build test
 
-test: ptsched.py ptsched-tests.py
-	./ptsched-tests.py
+build: $(OUTFILES_BUILD)
+
+deploy: all $(OUTFILES_INSTALL)
+
+test: build ptsched-tests.py
+	$(foreach test, $(TESTS), python3 $(test);)
 
 interactive: build
 	dev/test
 
-~/bin/%: out/%
+~/bin/%: out/bin/%
 	cp $< $@
 
-out/ptsched: ptsched.py
-	cp ptsched.py out/ptsched
+out/bin/ptsched: ptsched.py
+	cp ptsched.py out/bin/ptsched
 
-out/ptsched-event-helper: ptsched-event-helper/ptsched-event-helper/main.swift
+out/bin/ptsched-event-helper: ptsched-event-helper/ptsched-event-helper/ptsched-event-helper.swift
 	xcodebuild -project ptsched-event-helper/ptsched-event-helper.xcodeproj
-	cp ptsched-event-helper/build/Release/ptsched-event-helper out/ptsched-event-helper
+	cp ptsched-event-helper/build/Release/ptsched-event-helper out/bin/ptsched-event-helper
 
 .PHONY: test

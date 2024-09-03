@@ -31,6 +31,8 @@ import time
 # Task ABC
 
 # MARK: Helper constructs
+date_format = "%Y-%m-%d"
+
 class PTSchedException(Exception):
 	pass
 
@@ -170,25 +172,93 @@ def syscal(arguments):
 	schedule_argument_parser.add_argument("filename", help="The schedule file to use")
 	args = schedule_argument_parser.parse_args(arguments)
 
+	file_date_range = {}
+	with open(args.filename) as file:
+		parse_dates(file.readline(), file_date_range, 1)
+
 	output_tmp_filename = tmp_filename()
 	parse(["-o", output_tmp_filename, args.filename])
 	with open(output_tmp_filename) as file:
 		parse_output = file.read()
 	os.remove(output_tmp_filename)
 
-	days = re.finditer(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
+	days_regex_result = re.findall(r"(\d{4}-\d{2}-\d{2}):\n\n((?:.(?!\d{4}-\d{2}-\d{2}:\n\n))+)", parse_output, re.DOTALL)
+	contents_by_date = {}
+	for re_result in days_regex_result:
+		contents_by_date[re_result[1]] = re_result[2]
 
-	writing_subprocess = subprocess.Popen("ptsched-event-helper", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+	event_helper = subprocess.Popen("ptsched-event-helper", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+
 	id = 0
-	for day in days:
-		write_to_calendar(id, day[1], day[2], writing_subprocess.stdin)
-		id += 1
+	responses = {}
 
-	writing_subprocess.stdin.flush()
-	writing_subprocess.stdin.close()
-	writing_subprocess.wait()
+	query_request_id = make_request("QUERY", event_helper.stdin, id, {
+		"queryStartDate": datetime.datetime.strptime(file_date_range["start_date"], date_format),
+		"queryEndDate": datetime.datetime.strptime(file_date_range["end_date"], date_format)
+	})
+
+	query_response = get_response(query_request_id, responses, event_helper.stdout)
 	
+	to_delete = []
+	to_create = {}
+	to_update = {}
+
+	for date in query_response["eventIdentifiers"]:
+		if date in contents_by_date:
+			to_update[date] = {
+				"eventIdentifier": query_response["eventIdentifiers"][date],
+				"contents": contents_by_date[date],
+				"date": date,
+			}
+		else:
+			to_delete.append(query_response["eventIdentifiers"][date])
+
+	for date in contents_by_date:
+		if not date in query_response:
+			to_create[date] = contents_by_date[date]
+
+	# TODO: write this to make requests to create/update/delete the proper events
+
+	delete_requests = {}
+	create_requests = {}
+	update_requests = {}
+
+	for idx in range(0, len(to_delete)):
+		delete_requests[idx] = make_request("DELETE", event_helper.stdin, id, {
+			"eventIdentifier": to_delete[idx]
+		})
+	
+	for date in to_create:
+		create_requests[date] = make_request("CREATE", event_helper.stdin, id, {
+			"date": date,
+			"contents": to_create[date]
+		})
+
+	for date in to_update:
+		update_requests[date] = make_request("UPDATE", event_helper.stdin, id, {
+			"date": date,
+			"contents": to_update[date]
+		})
+
+	event_helper.stdin.flush()
+	event_helper.stdin.close()
+	event_helper.wait()
+	
+def make_request(type, pipe, id, payload):
+	payload["id"] = id
+	pipe.write("%s:%s" % (type, payload))
+	last_id = id
+	id += 1
+	return last_id
+
+def get_response(response_id, responses, pipe):
+	while not response_id in responses:
+		new_response = json.loads(pipe.readline())
+		responses[new_response.id] = new_response
+	return responses[response_id]
+
 def write_to_calendar(id, date, contents, subprocess_input):
+	
 	subprocess_input.write(("%d\nUPDATE\n%s\n%s\nEND REQUEST\n" % (id, date, contents.removesuffix("\n"))).encode())
 	subprocess_input.flush()
 

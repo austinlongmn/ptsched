@@ -2,12 +2,56 @@
 import unittest
 import json
 import os
-import sys
-import io
+import signal
+import subprocess
+import time
 
 import ptsched
 
 class Test_ptsched(unittest.TestCase):
+	def test_helper(self):
+		signal.alarm(3)
+		helper = subprocess.Popen("out/bin/ptsched-event-helper", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+		id = 0
+		queryStartDate = "2024-08-26"
+		queryEndDate = "2024-08-30"
+		request = "QUERY:" + json.dumps({
+			"id": id,
+			"queryStartDate": queryStartDate,
+			"queryEndDate": queryEndDate
+		}) + "\n"
+		helper.stdin.write(request.encode())
+		helper.stdin.flush()
+		result = helper.stdout.readline()
+		self.assertDictEqual(json.loads(result), {
+			"id": id,
+			"eventIdentifiers": {
+				"2024-08-26": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:8148FDC0-45E2-4716-B1C8-733C6D1A2CFD",
+				"2024-08-27": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:DB093BDD-275D-41E6-9742-C84F253B2BA8",
+				"2024-08-28": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:8B6A9A7B-D656-4000-8CCE-694AE440E1DD",
+				"2024-08-29": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:54291713-37A0-4C89-B917-25AF38B1976E",
+				"2024-08-30": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:AF40C127-AECF-4F60-BF5F-EDC7088F7246"
+			}
+		})
+		id += 1
+		print("testing update")
+
+		request = "UPDATE:" + json.dumps({
+			"id": id,
+			"eventIdentifier": "74E9AB48-60A7-4CF4-BFDD-08717FFC3B9E:8148FDC0-45E2-4716-B1C8-733C6D1A2CFD",
+			"contents": "Test at %f" % time.time()
+		})
+		result = helper.stdout.readline()
+		obj_result = json.loads(result)
+		self.assertTrue(obj_result["id"] == id)
+		print(obj_result)
+		id += 1
+
+		helper.stdin.close()
+		helper.stdout.close()
+		helper.wait()
+		signal.alarm(0)
+	
 	def test_parser(self):
 		for (input_filename, expected_output_filename) in self.get_input_and_expected_outputs("ast.json", "24"):
 			with open(input_filename) as input_file, open(expected_output_filename) as expected_output_file:

@@ -51,6 +51,13 @@
             ReferencedContainer = "container:ptsched-event-helper.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "PTSCHED_DEBUG_CALENDAR"
+            value = "Test Calendar"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

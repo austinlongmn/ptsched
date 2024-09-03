@@ -271,7 +271,7 @@ def parse_file(file):
 def parse(arguments):
 	parse_argument_parser = argparse.ArgumentParser("ptsched parse", description="Parse a ptsched file and output the result")
 	parse_argument_parser.add_argument("-d", "--dry-run", action="store_true", help="Parse file, but do not output anything.")
-	parse_argument_parser.add_argument("-D", "--debug", action="store_true", help="Display extra debug information")
+	parse_argument_parser.add_argument("-a", "--ast", action="store_true", help="Outputs the abstract syntax tree of the file - use dry run for just the tree")
 	parse_argument_parser.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
 	parse_argument_parser.add_argument("filename", help="The file to read (default is STDIN)", nargs="?")
 	args = parse_argument_parser.parse_args(arguments)

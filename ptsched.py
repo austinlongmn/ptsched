@@ -9,6 +9,7 @@ import json
 import subprocess
 import multiprocessing
 import time
+import pathlib
 
 # Syntax of schedule file
 
@@ -29,6 +30,8 @@ import time
 
 # - Mon 20
 # Task ABC
+
+config_path = str(pathlib.Path.home().joinpath(".ptschedconfig"))
 
 # MARK: Helper constructs
 class PTSchedException(Exception):
@@ -82,7 +85,19 @@ def parse_date(day_of_week, day_number, range_start, range_end, lineno):
 # MARK: init
 def init(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched init", description="Initialize a ptsched directory")
+	schedule_argument_parser.add_argument("-s", "--set-default", action="store_true", help="Sets the directory as the default ptsched directory for the user. A new ptsched directory will not be created.")
 	args = schedule_argument_parser.parse_args(arguments)
+
+	if args.set_default:
+		try:
+			with open(config_path) as r_file:
+				config = json.load(r_file)
+		except FileNotFoundError:
+			config = {}
+		config["defaultDirectory"] = str(pathlib.Path.cwd())
+		with open(config_path, "w") as w_file:
+			json.dump(config, w_file)
+		return
 
 	try:
 		with open(".ptscheddir", 'x') as directory_file:
@@ -108,6 +123,16 @@ def scan():
 				result.append((directory + "/" + file).removeprefix("./"))
 	return result
 
+def find(arguments):
+	find_argument_parser = argparse.ArgumentParser("ptsched find", description="Finds the default ptsched file for new additions")
+	args = find_argument_parser.parse_args(arguments)
+
+	try:
+		with open(config_path) as config_file:
+			config = json.load(config_file)
+			print(config["defaultDirectory"])
+	except FileNotFoundError:
+		print("No ptsched configuration has been set. Run\n\n\tptsched --set-default\n\nin your directory of choice.")
 
 # MARK: schedule
 def schedule(arguments):
@@ -302,9 +327,9 @@ def parse(arguments):
 			infile.close()
 
 
-	if args.debug: print(json.dumps(schedule, default=str, indent=2))
+	if args.ast: print(json.dumps(schedule, default=str, indent=2))
 
-	if args.dry_run: exit(0)
+	if args.dry_run: return
 
 	events = {}
 
@@ -342,7 +367,8 @@ subcommands = {
 	"parse":    parse,
 	"init":     init,
 	"syscal":   syscal,
-	"schedule": schedule
+	"schedule": schedule,
+	"find":     find
 }
 
 valid_subcommand_description = ""

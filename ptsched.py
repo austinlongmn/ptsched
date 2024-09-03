@@ -113,24 +113,51 @@ def init(arguments):
 		print("A ptsched directory already exists in this folder.", file=sys.stderr)
 		exit(17)
 
-def scan():
+def scan(dir=str(pathlib.Path.cwd())):
 	result = []
-	for (directory, dirs, files) in os.walk("."):
+	path = pathlib.Path(dir)
+	for (directory, dirs, files) in os.walk(str(path)):
 		if ".ptschedignore" in files:
 			continue
 		for file in files:
 			if file.endswith(".ptsched"):
-				result.append((directory + "/" + file).removeprefix("./"))
+				result.append(pathlib.Path(directory).joinpath(file))
 	return result
 
+# MARK: find
 def find(arguments):
 	find_argument_parser = argparse.ArgumentParser("ptsched find", description="Finds the default ptsched file for new additions")
+	find_argument_parser.add_argument("-d", "--directory", help="Gives the directory instead of the file")
 	args = find_argument_parser.parse_args(arguments)
 
 	try:
 		with open(config_path) as config_file:
 			config = json.load(config_file)
-			print(config["defaultDirectory"])
+			ptsched_directory = config["defaultDirectory"]
+
+			if args.directory:
+				print(ptsched_directory)
+				return
+		
+			results = {}
+			for filename in scan(ptsched_directory):
+				with open(filename) as file:
+					result = {}
+					parse_dates(file.readline(), result, 1)
+					date = datetime.datetime.now().timestamp()
+					time = datetime.datetime.min.time()
+					start_date = datetime.datetime.combine(result["start_date"], time).timestamp()
+					end_date = datetime.datetime.combine(result["end_date"], time).timestamp()
+					interval1 = abs(start_date - date)
+					interval2 = abs(end_date - date)
+					results[filename] = min(interval1, interval2)
+			
+			def convert(key):
+				return results[key]
+
+			print(min(results.keys(), key=convert))
+
+						
 	except FileNotFoundError:
 		print("No ptsched configuration has been set. Run\n\n\tptsched --set-default\n\nin your directory of choice.")
 
@@ -221,6 +248,17 @@ def tmp_filename():
 	return subprocess.check_output(["mktemp", "-t", "ptsched"]).decode("utf-8").removesuffix("\n")
 
 def parse_dates(line, result, lineno):
+	"""
+	parse the contents of line as a date range
+
+	line -- the line contents of the file containing the date range
+	result -- the result - this will be modified by the function
+	lineno -- the line number for diagnostic messages
+
+	This function parses the contents of line and puts the results into result.
+	Upon successful completion, result["start_date"] and result["end_date"] will
+	be set to the parsed values (datetime.datetime objects).
+	"""
 	re_result = re.match(r"^\s*(.+?)\s*[-–—]\s*(.+?)\s*$", line)
 	try:
 		result["start_date"] = datetime.datetime.strptime(re_result.group(1), "%d %B %Y").date()
@@ -296,7 +334,9 @@ def parse_file(file):
 def parse(arguments):
 	parse_argument_parser = argparse.ArgumentParser("ptsched parse", description="Parse a ptsched file and output the result")
 	parse_argument_parser.add_argument("-d", "--dry-run", action="store_true", help="Parse file, but do not output anything.")
-	parse_argument_parser.add_argument("-a", "--ast", action="store_true", help="Outputs the abstract syntax tree of the file - use dry run for just the tree")
+	parse_argument_parser.add_argument("-a", "--ast", action="store_true", help="Outputs the abstract syntax tree of the file")
+	parse_argument_parser.add_argument("-c", "--list-courses", action="store_true", help="List courses in the file")
+	parse_argument_parser.add_argument("-y", "--list-days", action="store_true", help="List days in the file, output format is YYYY-MM-DD")
 	parse_argument_parser.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
 	parse_argument_parser.add_argument("filename", help="The file to read (default is STDIN)", nargs="?")
 	args = parse_argument_parser.parse_args(arguments)
@@ -327,7 +367,13 @@ def parse(arguments):
 			infile.close()
 
 
-	if args.ast: print(json.dumps(schedule, default=str, indent=2))
+	if args.ast:
+		print(json.dumps(schedule, default=str, indent=2))
+		return
+	if args.list_courses:
+		for course in schedule["courses"]:
+			print(course)
+		return
 
 	if args.dry_run: return
 
@@ -351,6 +397,11 @@ def parse(arguments):
 			exit(1)
 	else:
 		outfile = sys.stdout
+
+	if args.list_days:
+		for day in events:
+			print(day)
+		return
 
 	try:
 		counter = 0

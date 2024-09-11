@@ -121,7 +121,7 @@ def scan(dir=str(pathlib.Path.cwd())):
 			continue
 		for file in files:
 			if file.endswith(".ptsched"):
-				result.append(pathlib.Path(directory).joinpath(file))
+				result.append(str(pathlib.Path(directory).joinpath(file)))
 	return result
 
 # MARK: find
@@ -164,7 +164,8 @@ def find(arguments):
 # MARK: schedule
 def schedule(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Schedules changed .ptsched files into your calendar via syscal")
-	schedule_argument_parser.parse_args(arguments)
+	schedule_argument_parser.add_argument("-q", "--quiet", help="Do not output extra information")
+	args = schedule_argument_parser.parse_args(arguments)
 
 	try:
 		with open(".ptscheddir") as directory_file:
@@ -181,7 +182,8 @@ def schedule(arguments):
 		c_args.append((
 			files[idx]["filename"],
 			files[idx]["lastScheduled"],
-			idx
+			idx,
+			args.quiet
 		))
 
 	with multiprocessing.Pool(5) as pool:
@@ -202,7 +204,8 @@ def schedule(arguments):
 
 def syscal_if_needed(file_info_and_id): # (filename, schedule date, id)
 	if file_info_and_id[1] == None or os.path.getmtime(file_info_and_id[0]) > float(file_info_and_id[1]):
-		print("ptsched syscal", file_info_and_id[0])
+		if not file_info_and_id[3]:
+			print("ptsched syscal", file_info_and_id[0])
 		syscal([file_info_and_id[0]])
 		return (time.time(), file_info_and_id[2])
 	return (None, file_info_and_id[2])
@@ -334,10 +337,12 @@ def parse_file(file):
 def parse(arguments):
 	parse_argument_parser = argparse.ArgumentParser("ptsched parse", description="Parse a ptsched file and output the result")
 	parse_argument_parser.add_argument("-d", "--dry-run", action="store_true", help="Parse file, but do not output anything.")
-	parse_argument_parser.add_argument("-a", "--ast", action="store_true", help="Outputs the abstract syntax tree of the file")
-	parse_argument_parser.add_argument("-c", "--list-courses", action="store_true", help="List courses in the file")
-	parse_argument_parser.add_argument("-y", "--list-days", action="store_true", help="List days in the file, output format is YYYY-MM-DD")
-	parse_argument_parser.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
+	output_group = parse_argument_parser.add_mutually_exclusive_group()
+	output_group.add_argument("-a", "--ast", action="store_true", help="Outputs the abstract syntax tree of the file")
+	output_group.add_argument("-c", "--list-courses", action="store_true", help="List courses in the file")
+	output_group.add_argument("-y", "--list-days", action="store_true", help="List days in the file, output format is YYYY-MM-DD")
+	output_group.add_argument("-j", "--json", action="store_true", help="Outputs in JSON format")
+	output_group.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
 	parse_argument_parser.add_argument("filename", help="The file to read (default is STDIN)", nargs="?")
 	args = parse_argument_parser.parse_args(arguments)
 
@@ -377,16 +382,19 @@ def parse(arguments):
 
 	if args.dry_run: return
 
-	events = {}
-
+	result = {}
 	for course in sorted(schedule["courses"].keys()):
 		for day in sorted(schedule["courses"][course].keys()):
-			if (not (day in events.keys())):
-				events[day] = ""
-			events[day] += course + ":\n"
+			if (not (day in result.keys())):
+				result[day] = {}
+			if (not (course in result[day].keys())):
+				result[day][course] = []
 			for task in schedule["courses"][course][day]:
-				events[day] += task + "\n"
-			events[day] += "\n"
+				result[day][course].append(task)
+
+	if args.json:
+		print(json.dumps(result, indent="\t"))
+		return
 
 	output_filename = args.output
 	if output_filename != None:
@@ -399,16 +407,27 @@ def parse(arguments):
 		outfile = sys.stdout
 
 	if args.list_days:
-		for day in events:
+		for day in result:
 			print(day)
 		return
 
 	try:
 		counter = 0
-		length = len(events)
-		for day in events:
-			events[day] = events[day].removesuffix("\n\n")
-			print(day, ":\n\n", events[day], "\n", end="\n" if counter!=length-1 else "", sep="", file=outfile)
+		sorted_days = sorted(result.keys())
+		length = len(sorted_days)
+		for day in sorted_days:
+			print(day + ":\n", file=outfile)
+
+			sorted_courses = sorted(result[day].keys())
+			counter2 = 0
+			length2 = len(sorted_courses)
+			for course in sorted_courses:
+				print(course + ":", file=outfile)
+				for task in result[day][course]:
+					print(task, file=outfile)
+				if not (counter >= length-1 and counter2 >= length2-1):
+					print(file=outfile)
+				counter2 += 1
 			counter += 1
 	finally:
 		if outfile != sys.stdout:

@@ -54,6 +54,13 @@ class Test_ptsched(unittest.TestCase):
 				result.append((input_filename, test_directory))
 		self.assertNotEqual(len(result), 0)
 		return result
+	
+	def test_schedule(self):
+		os.chdir("dev/test-environment")
+		try:
+			ptsched.schedule([])
+		finally:
+			os.chdir("../..")
 
 if __name__ == "__main__":
 	unittest.main()

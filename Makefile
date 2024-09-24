@@ -1,3 +1,6 @@
+export DEVELOPER_DIR := /Applications/Xcode.app
+export PTSCHED_DEBUG_CALENDAR := Test Calendar
+
 build: test out/ptsched out/ptsched-event-helper
 
 deploy: build ~/bin/ptsched ~/bin/ptsched-event-helper

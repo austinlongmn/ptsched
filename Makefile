@@ -3,7 +3,7 @@ export PTSCHED_DEBUG_CALENDAR := Test Calendar
 
 build: test out/ptsched out/ptsched-event-helper
 
-deploy: build ~/bin/ptsched ~/bin/ptsched-event-helper
+deploy: build ~/.local/bin/ptsched ~/.local/bin/ptsched-event-helper
 
 test: ptsched.py ptsched-tests.py
 	./ptsched-tests.py
@@ -11,7 +11,7 @@ test: ptsched.py ptsched-tests.py
 interactive: build
 	dev/test
 
-~/bin/%: out/%
+~/.local/bin/%: out/%
 	cp $< $@
 
 out/ptsched: ptsched.py

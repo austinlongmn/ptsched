@@ -1,4 +1,3 @@
-export DEVELOPER_DIR := /Applications/Xcode.app
 export PTSCHED_DEBUG_CALENDAR := Test Calendar
 
 build: test out/ptsched out/ptsched-event-helper
@@ -17,8 +16,7 @@ interactive: build
 out/ptsched: ptsched.py
 	cp ptsched.py out/ptsched
 
-out/ptsched-event-helper: ptsched-event-helper/ptsched-event-helper/main.swift
-	xcodebuild -project ptsched-event-helper/ptsched-event-helper.xcodeproj
-	cp ptsched-event-helper/build/Release/ptsched-event-helper out/ptsched-event-helper
+out/ptsched-event-helper: event-helper/main.swift
+	swiftc -o $@ $<
 
 .PHONY: test

@@ -164,7 +164,8 @@ def find(arguments):
 # MARK: schedule
 def schedule(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Schedules changed .ptsched files into your calendar via syscal")
-	schedule_argument_parser.add_argument("-q", "--quiet", help="Do not output extra information")
+	schedule_argument_parser.add_argument("-q", "--quiet", action="store_true", help="Do not output extra information")
+	schedule_argument_parser.add_argument("--no-vcs", action="store_true", help="Do not commit changes to version control")
 	args = schedule_argument_parser.parse_args(arguments)
 
 	try:
@@ -195,7 +196,7 @@ def schedule(arguments):
 			files[file_results[1]]["lastScheduled"] = time.time()
 			did_change_files = True
 	
-	if did_change_files:
+	if did_change_files and not args.no_vcs:
 		os.system("git add \\*.ptsched")
 		os.system("git commit -m \"Schedule edit at %s\"" % datetime.datetime.now().strftime('%a %d %b %Y, %I:%M %p'))
 	

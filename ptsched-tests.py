@@ -58,7 +58,10 @@ class Test_ptsched(unittest.TestCase):
 	def test_schedule(self):
 		os.chdir("dev/test-environment")
 		try:
-			ptsched.schedule([])
+			if os.path.exists(".ptscheddir"):
+				os.unlink(".ptscheddir")
+			ptsched.init([])
+			ptsched.schedule(["--no-vcs", "--quiet"])
 		finally:
 			os.chdir("../..")
 

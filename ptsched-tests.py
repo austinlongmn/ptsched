@@ -50,7 +50,7 @@ class Test_ptsched(unittest.TestCase):
 				if not "ptsched" in file:
 					continue
 				input_filename = dir + "/" + file
-				test_directory = "%s%s%s%s%s" % (dir.replace("input/", "expected-output/"), "/", file, "/", suffix)
+				test_directory = "%s%s%s%s%s" % (dir.replace("input/", "expected-output-md/"), "/", file, "/", suffix)
 				result.append((input_filename, test_directory))
 		self.assertNotEqual(len(result), 0)
 		return result

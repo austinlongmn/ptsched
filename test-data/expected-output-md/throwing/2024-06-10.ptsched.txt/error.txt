@@ -1,0 +1,2 @@
+PTSchedParseException
+Expected course name, but line did not match: line 3

@@ -59,6 +59,9 @@ class Test_ptsched(unittest.TestCase):
 		return result
 	
 	def test_schedule(self):
+		if not os.path.exists("dev/test-environment"):
+			self.skipTest("Skipping test for CI pipeline.")
+			return
 		os.chdir("dev/test-environment")
 		try:
 			if os.path.exists(".ptscheddir"):

@@ -2,10 +2,8 @@
 import unittest
 import json
 import os
-import sys
-import io
 
-import ptsched
+import ptsched.ptsched as ptsched
 
 class Test_ptsched(unittest.TestCase):
 	def test_parser(self):

@@ -1,11 +1,11 @@
 export PTSCHED_DEBUG_CALENDAR := Test Calendar
 
-build: test out/ptsched out/ptsched-event-helper
+build: out/ptsched out/ptsched-event-helper
 
 deploy: build ~/.local/bin/ptsched ~/.local/bin/ptsched-event-helper
 
-test: ptsched.py ptsched-tests.py
-	./ptsched-tests.py
+test: ptsched/* tests/ptsched_tests.py
+	python3 tests/ptsched_tests.py
 
 interactive: build
 	dev/test
@@ -13,8 +13,8 @@ interactive: build
 ~/.local/bin/%: out/%
 	cp $< $@
 
-out/ptsched: ptsched.py
-	cp ptsched.py out/ptsched
+out/ptsched: ptsched/*
+	python3 -m zipapp ptsched -o out/ptsched -p "/usr/bin/env python3"
 
 out/ptsched-event-helper: event-helper/main.swift
 	swiftc -o $@ $<

@@ -3,14 +3,17 @@ import unittest
 import json
 import os
 
-import ptsched.ptsched as ptsched
+from ptsched.utils import *
+from ptsched.parse import parse_file, parse
+from ptsched.init import init
+from ptsched.schedule import schedule
 
 class Test_ptsched(unittest.TestCase):
 	def test_parser(self):
 		for (input_filename, expected_output_filename) in self.get_input_and_expected_outputs("ast.json", "24"):
 			with open(input_filename) as input_file, open(expected_output_filename) as expected_output_file:
 				self.assertEqual(
-					json.loads(json.dumps(ptsched.parse_file(input_file), default=str)),
+					json.loads(json.dumps(parse_file(input_file), default=str)),
 					json.load(expected_output_file), msg="File %s failed the AST test." % input_filename
 				)
 	
@@ -19,7 +22,7 @@ class Test_ptsched(unittest.TestCase):
 			for (input_filename, expected_output_filename) in self.get_input_and_expected_outputs("out.txt", "24", output_type):
 				with open(expected_output_filename) as expected_output_file:
 					output_arg = "-m" if output_type == "md" else "-n"
-					ptsched.parse(["-o", "temp_test_result", input_filename, output_arg])
+					parse(["-o", "temp_test_result", input_filename, output_arg])
 					with open("temp_test_result") as result:
 						self.assertEqual(result.read(), expected_output_file.read(), msg="File %s failed the final results test." % input_filename)
 		os.remove("temp_test_result")
@@ -32,12 +35,12 @@ class Test_ptsched(unittest.TestCase):
 				error_type = split[0]
 				error_message = split[1]
 				if error_type == "PTSchedParseException":
-					error = ptsched.PTSchedParseException
+					error = PTSchedParseException
 				elif error_type == "PTSchedValidationException":
-					error = ptsched.PTSchedValidationException
+					error = PTSchedValidationException
 				
 				with self.assertRaises(error) as cm:
-					ptsched.parse_file(input_file)
+					parse_file(input_file)
 
 				self.assertEqual(str(cm.exception), str(error(error_message)))
 
@@ -64,8 +67,8 @@ class Test_ptsched(unittest.TestCase):
 		try:
 			if os.path.exists(".ptscheddir"):
 				os.unlink(".ptscheddir")
-			ptsched.init([])
-			ptsched.schedule(["--no-vcs", "--quiet"])
+			init([])
+			schedule(["--no-vcs", "--quiet"])
 		finally:
 			os.chdir("../..")
 

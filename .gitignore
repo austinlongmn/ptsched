@@ -29,3 +29,8 @@ Temporary Items
 out
 dev
 __pycache__
+.venv
+*.egg-info/
+**/bin
+build
+.pytest_cache

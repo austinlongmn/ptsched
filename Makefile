@@ -1,22 +1,20 @@
 export PTSCHED_DEBUG_CALENDAR := Test Calendar
 
-build: test out/ptsched out/ptsched-event-helper
+build: test .venv/bin/ptsched
 
-deploy: build ~/.local/bin/ptsched ~/.local/bin/ptsched-event-helper
+deploy: build
+	pipx install .
 
-test: ptsched.py ptsched-tests.py
-	./ptsched-tests.py
+test: ptsched/*.py ptsched/bin/event-helper
+	.venv/bin/pytest
 
 interactive: build
 	dev/test
 
-~/.local/bin/%: out/%
-	cp $< $@
+.venv/bin/ptsched: ptsched/**/* ptsched/bin/event-helper setup.py
+	.venv/bin/pip3 install .
 
-out/ptsched: ptsched.py
-	cp ptsched.py out/ptsched
-
-out/ptsched-event-helper: event-helper/main.swift
+ptsched/bin/event-helper: event-helper/main.swift
 	swiftc -o $@ $<
 
 .PHONY: test

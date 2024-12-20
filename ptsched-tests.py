@@ -17,11 +17,13 @@ class Test_ptsched(unittest.TestCase):
 				)
 	
 	def test_final_results(self):
-		for (input_filename, expected_output_filename) in self.get_input_and_expected_outputs("out.txt", "24"):
-			with open(expected_output_filename) as expected_output_file:
-				ptsched.parse(["-o", "temp_test_result", input_filename])
-				with open("temp_test_result") as result:
-					self.assertEqual(result.read(), expected_output_file.read(), msg="File %s failed the final results test." % input_filename)
+		for output_type in ["normal", "md"]:
+			for (input_filename, expected_output_filename) in self.get_input_and_expected_outputs("out.txt", "24", output_type):
+				with open(expected_output_filename) as expected_output_file:
+					output_arg = "-m" if output_type == "md" else "-n"
+					ptsched.parse(["-o", "temp_test_result", input_filename, output_arg])
+					with open("temp_test_result") as result:
+						self.assertEqual(result.read(), expected_output_file.read(), msg="File %s failed the final results test." % input_filename)
 		os.remove("temp_test_result")
 
 	def test_throws(self):
@@ -41,7 +43,7 @@ class Test_ptsched(unittest.TestCase):
 
 				self.assertEqual(str(cm.exception), str(error(error_message)))
 
-	def get_input_and_expected_outputs(self, suffix, criteria):
+	def get_input_and_expected_outputs(self, suffix, criteria, output_type="normal"):
 		result = []
 		for (dir, _, files) in os.walk("test-data/input"):
 			if "expected-output" in dir or "out" in dir or not criteria in dir:
@@ -50,7 +52,7 @@ class Test_ptsched(unittest.TestCase):
 				if not "ptsched" in file:
 					continue
 				input_filename = dir + "/" + file
-				test_directory = "%s%s%s%s%s" % (dir.replace("input/", "expected-output-md/"), "/", file, "/", suffix)
+				test_directory = f"{dir.replace("input/", f"expected-output-{output_type}/")}/{file}/{suffix}"
 				result.append((input_filename, test_directory))
 		self.assertNotEqual(len(result), 0)
 		return result

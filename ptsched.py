@@ -342,7 +342,9 @@ def parse(arguments):
 	output_group.add_argument("-c", "--list-courses", action="store_true", help="List courses in the file")
 	output_group.add_argument("-y", "--list-days", action="store_true", help="List days in the file, output format is YYYY-MM-DD")
 	output_group.add_argument("-j", "--json", action="store_true", help="Outputs in JSON format")
-	output_group.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
+	output_group.add_argument("-m", "--markdown", action="store_true", help="Outputs in Markdown format")
+	output_group.add_argument("-n", "--normal", action="store_true", help="Outputs in normal format (the default)", default=True)
+	parse_argument_parser.add_argument("-o", "--output", help="The file to output to (default is STDOUT)")
 	parse_argument_parser.add_argument("filename", help="The file to read (default is STDIN)", nargs="?")
 	args = parse_argument_parser.parse_args(arguments)
 
@@ -371,13 +373,22 @@ def parse(arguments):
 		if infile != sys.stdin:
 			infile.close()
 
+	output_filename = args.output
+	if output_filename != None:
+		try:
+			outfile = open(output_filename, mode="w")
+		except OSError as error:
+			print("Error when opening file:", error, file=sys.stderr)
+			exit(1)
+	else:
+		outfile = sys.stdout
 
 	if args.ast:
-		print(json.dumps(schedule, default=str, indent=2))
+		json.dump(schedule, outfile, default=str, indent=2)
 		return
 	if args.list_courses:
 		for course in schedule["courses"]:
-			print(course)
+			print(course, file=outfile)
 		return
 
 	if args.dry_run: return
@@ -393,25 +404,20 @@ def parse(arguments):
 				result[day][course].append(task)
 
 	if args.json:
-		print(json.dumps(result, indent="\t"))
+		json.dump(result, outfile, default=str, indent="\t")
 		return
-
-	output_filename = args.output
-	if output_filename != None:
-		try:
-			outfile = open(output_filename, mode="w")
-		except OSError as error:
-			print("Error when opening file:", error, file=sys.stderr)
-			exit(1)
-	else:
-		outfile = sys.stdout
 
 	if args.list_days:
 		for day in result:
-			print(day)
+			print(day, file=outfile)
 		return
 	
-	output_markdown(result, outfile)
+	if args.markdown:
+		output_markdown(result, outfile)
+		return
+	elif args.normal:
+		output_default(result, outfile)
+		return
 
 def output_default(result, outfile):
 	try:

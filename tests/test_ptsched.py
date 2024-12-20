@@ -46,7 +46,7 @@ class Test_ptsched(unittest.TestCase):
 
 	def get_input_and_expected_outputs(self, suffix, criteria, output_type="normal"):
 		result = []
-		for (dir, _, files) in os.walk("test-data/input"):
+		for (dir, _, files) in os.walk("tests/test_data/input"):
 			if "expected-output" in dir or "out" in dir or not criteria in dir:
 				continue
 			for file in files:

@@ -30,3 +30,5 @@ out
 dev
 __pycache__
 .venv
+*.egg-info/
+**/bin

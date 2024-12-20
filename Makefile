@@ -1,22 +1,20 @@
 export PTSCHED_DEBUG_CALENDAR := Test Calendar
+export PATH := .venv/bin:$(PATH)
 
-build: out/ptsched out/ptsched-event-helper
+build: test .venv/bin/ptsched
 
 deploy: build ~/.local/bin/ptsched ~/.local/bin/ptsched-event-helper
 
-test: ptsched/* tests/ptsched_tests.py
-	python3 tests/ptsched_tests.py
+test: ptsched/*.py ptsched/bin/event-helper
+	pytest
 
 interactive: build
 	dev/test
 
-~/.local/bin/%: out/%
-	cp $< $@
+.venv/bin/ptsched: ptsched/**/* ptsched/bin/event-helper setup.py
+	pip3 install .
 
-out/ptsched: ptsched/*
-	python3 -m zipapp ptsched -o out/ptsched -p "/usr/bin/env python3"
-
-out/ptsched-event-helper: event-helper/main.swift
+ptsched/bin/event-helper: event-helper/main.swift
 	swiftc -o $@ $<
 
 .PHONY: test

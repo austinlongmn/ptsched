@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from utils import *
+from .utils import *
 
 # Syntax of schedule file
 
@@ -23,11 +23,11 @@ from utils import *
 # - Mon 20
 # Task ABC
 
-from parse import parse
-from init import init
-from syscal import syscal
-from schedule import schedule
-from find import find
+from .parse import parse
+from .init import init
+from .syscal import syscal
+from .schedule import schedule
+from .find import find
 
 subcommands = {
 	"parse":    parse,

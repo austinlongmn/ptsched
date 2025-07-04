@@ -2,7 +2,7 @@ import argparse
 import sys
 import json
 
-from .utils import *
+from ptsched.utils import *
 
 def parse_file(file):
 	result = {}

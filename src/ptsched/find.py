@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from .utils import *
+from ptsched.utils import *
 
 def find(arguments):
 	find_argument_parser = argparse.ArgumentParser("ptsched find", description="Finds the default ptsched file for new additions")

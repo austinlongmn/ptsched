@@ -5,8 +5,8 @@ import time
 import datetime
 import multiprocessing
 
-from .utils import *
-from .syscal import syscal
+from ptsched.utils import *
+from ptsched.syscal import syscal
 
 def schedule(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched schedule", description="Schedules changed .ptsched files into your calendar via syscal")

@@ -3,7 +3,7 @@ import json
 import uuid
 import sys
 
-from .utils import *
+from ptsched.utils import *
 
 def init(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched init", description="Initialize a ptsched directory")

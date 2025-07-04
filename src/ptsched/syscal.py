@@ -2,8 +2,8 @@ import argparse
 import subprocess
 import importlib.resources as resources
 
-from .utils import *
-from .parse import parse
+from ptsched.utils import *
+from ptsched.parse import parse
 
 def syscal(arguments):
 	schedule_argument_parser = argparse.ArgumentParser("ptsched syscal", description="Launches a helper program to write ptsched schedules to the system calendar")

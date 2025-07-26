@@ -1,5 +1,4 @@
 import re
-import argparse
 import sys
 import json
 
@@ -82,54 +81,12 @@ def parse_file(file):
     return result
 
 
-def parse(arguments):
-    parse_argument_parser = argparse.ArgumentParser(
-        "ptsched parse", description="Parse a ptsched file and output the result"
-    )
-    parse_argument_parser.add_argument(
-        "-d",
-        "--dry-run",
-        action="store_true",
-        help="Parse file, but do not output anything.",
-    )
-    output_group = parse_argument_parser.add_mutually_exclusive_group()
-    output_group.add_argument(
-        "-a",
-        "--ast",
-        action="store_true",
-        help="Outputs the abstract syntax tree of the file",
-    )
-    output_group.add_argument(
-        "-c", "--list-courses", action="store_true", help="List courses in the file"
-    )
-    output_group.add_argument(
-        "-y",
-        "--list-days",
-        action="store_true",
-        help="List days in the file, output format is YYYY-MM-DD",
-    )
-    output_group.add_argument(
-        "-j", "--json", action="store_true", help="Outputs in JSON format"
-    )
-    output_group.add_argument(
-        "-m", "--markdown", action="store_true", help="Outputs in Markdown format"
-    )
-    output_group.add_argument(
-        "-n",
-        "--normal",
-        action="store_true",
-        help="Outputs in normal format (the default)",
-        default=True,
-    )
-    parse_argument_parser.add_argument(
-        "-o", "--output", help="The file to output to (default is STDOUT)"
-    )
-    parse_argument_parser.add_argument(
-        "filename", help="The file to read (default is STDIN)", nargs="?"
-    )
-    args = parse_argument_parser.parse_args(arguments)
+def parse_cmd(arguments):
+    parse(**vars(arguments))
 
-    filename = args.filename
+
+def parse(**kwargs):
+    filename = kwargs.get("filename")
     if filename is not None:
         try:
             infile = open(filename)
@@ -154,7 +111,7 @@ def parse(arguments):
         if infile != sys.stdin:
             infile.close()
 
-    output_filename = args.output
+    output_filename = kwargs.get("output")
     if output_filename is not None:
         try:
             outfile = open(output_filename, mode="w")
@@ -164,15 +121,15 @@ def parse(arguments):
     else:
         outfile = sys.stdout
 
-    if args.ast:
+    if kwargs.get("ast"):
         json.dump(schedule, outfile, default=str, indent=2)
         return
-    if args.list_courses:
+    if kwargs.get("list_courses"):
         for course in schedule["courses"]:
             print(course, file=outfile)
         return
 
-    if args.dry_run:
+    if kwargs.get("dry_run"):
         return
 
     result = {}
@@ -185,19 +142,19 @@ def parse(arguments):
             for task in schedule["courses"][course][day]:
                 result[day][course].append(task)
 
-    if args.json:
+    if kwargs.get("json"):
         json.dump(result, outfile, default=str, indent="\t")
         return
 
-    if args.list_days:
+    if kwargs.get("list_days"):
         for day in result:
             print(day, file=outfile)
         return
 
-    if args.markdown:
+    if kwargs.get("markdown"):
         output_markdown(result, outfile)
         return
-    elif args.normal:
+    elif kwargs.get("normal"):
         output_default(result, outfile)
         return
 

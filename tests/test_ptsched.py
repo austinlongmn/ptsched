@@ -3,6 +3,7 @@ import unittest
 import json
 import os
 
+
 import ptsched.utils as utils
 from ptsched.parse import parse_file, parse
 from ptsched.init import init
@@ -32,8 +33,19 @@ class Test_ptsched(unittest.TestCase):
                 expected_output_filename,
             ) in self.get_input_and_expected_outputs("out.txt", "24", output_type):
                 with open(expected_output_filename) as expected_output_file:
-                    output_arg = "-m" if output_type == "md" else "-n"
-                    parse(["-o", "temp_test_result", input_filename, output_arg])
+                    (
+                        parse(
+                            output="temp_test_result",
+                            filename=input_filename,
+                            normal=True,
+                        )
+                        if output_type == "normal"
+                        else parse(
+                            output="temp_test_result",
+                            filename=input_filename,
+                            markdown=True,
+                        )
+                    )
                     with open("temp_test_result") as result:
                         self.assertEqual(
                             result.read(),
@@ -90,8 +102,8 @@ class Test_ptsched(unittest.TestCase):
         try:
             if os.path.exists(".ptscheddir"):
                 os.unlink(".ptscheddir")
-            init([])
-            schedule(["--no-vcs", "--quiet"])
+            init()
+            schedule(vcs=False, quiet=True)
         finally:
             os.chdir("../..")
 

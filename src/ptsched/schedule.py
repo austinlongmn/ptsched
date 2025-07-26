@@ -1,5 +1,4 @@
 import os
-import argparse
 import json
 import sys
 import time
@@ -10,19 +9,11 @@ import ptsched.utils as utils
 from ptsched.syscal import syscal
 
 
-def schedule(arguments):
-    schedule_argument_parser = argparse.ArgumentParser(
-        "ptsched schedule",
-        description="Schedules changed .ptsched files into your calendar via syscal",
-    )
-    schedule_argument_parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Do not output extra information"
-    )
-    schedule_argument_parser.add_argument(
-        "--no-vcs", action="store_true", help="Do not commit changes to version control"
-    )
-    args = schedule_argument_parser.parse_args(arguments)
+def schedule_cmd(arguments):
+    schedule(**vars(arguments))
 
+
+def schedule(**kwargs):
     try:
         with open(".ptscheddir") as directory_file:
             directory_info = json.load(directory_file)
@@ -36,7 +27,7 @@ def schedule(arguments):
     c_args = []
     for idx in range(0, len(files)):
         c_args.append(
-            (files[idx]["filename"], files[idx]["lastScheduled"], idx, args.quiet)
+            (files[idx]["filename"], files[idx]["lastScheduled"], idx, kwargs["quiet"])
         )
 
     with multiprocessing.Pool(5) as pool:
@@ -48,7 +39,7 @@ def schedule(arguments):
             files[file_results[1]]["lastScheduled"] = time.time()
             did_change_files = True
 
-    if did_change_files and not args.no_vcs:
+    if did_change_files and not kwargs.get("no_vcs"):
         os.system("git add \\*.ptsched")
         os.system(
             'git commit -m "Schedule edit at %s"'

@@ -1,4 +1,3 @@
-import argparse
 import importlib.resources as resources
 import sys
 import os
@@ -8,16 +7,13 @@ import subprocess
 from ptsched.parse import parse
 
 
-def syscal(arguments):
-    schedule_argument_parser = argparse.ArgumentParser(
-        "ptsched syscal",
-        description="Launches a helper program to write ptsched schedules to the system calendar",
-    )
-    schedule_argument_parser.add_argument("filename", help="The schedule file to use")
-    args = schedule_argument_parser.parse_args(arguments)
+def syscal_cmd(arguments):
+    syscal(**vars(arguments))
 
+
+def syscal(**kwargs):
     output_tmp_filename = tmp_filename()
-    parse(["-o", output_tmp_filename, args.filename])
+    parse(output=output_tmp_filename, filename=kwargs["filename"])
     with open(output_tmp_filename) as file:
         parse_output = file.read()
     os.remove(output_tmp_filename)

@@ -34,3 +34,5 @@ __pycache__
 **/bin
 build
 .pytest_cache
+
+.zed

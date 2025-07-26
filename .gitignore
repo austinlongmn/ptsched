@@ -36,3 +36,4 @@ build
 .pytest_cache
 
 .zed
+temp_test_result

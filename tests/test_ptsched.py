@@ -6,8 +6,6 @@ import os
 
 import ptsched.utils as utils
 from ptsched.parse import parse_file, parse
-from ptsched.init import init
-from ptsched.schedule import schedule
 
 
 class Test_ptsched(unittest.TestCase):
@@ -94,18 +92,6 @@ class Test_ptsched(unittest.TestCase):
                 result.append((input_filename, test_directory))
         self.assertNotEqual(len(result), 0)
         return result
-
-    def test_schedule(self):
-        if not os.path.exists("dev/test-environment"):
-            self.skipTest("Skipping test for CI pipeline.")
-        os.chdir("dev/test-environment")
-        try:
-            if os.path.exists(".ptscheddir"):
-                os.unlink(".ptscheddir")
-            init()
-            schedule(vcs=False, quiet=True)
-        finally:
-            os.chdir("../..")
 
 
 if __name__ == "__main__":

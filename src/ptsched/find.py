@@ -1,25 +1,20 @@
-import argparse
 import json
 import datetime
 
 import ptsched.utils as utils
 
 
-def find(arguments):
-    find_argument_parser = argparse.ArgumentParser(
-        "ptsched find", description="Finds the default ptsched file for new additions"
-    )
-    find_argument_parser.add_argument(
-        "-d", "--directory", help="Gives the directory instead of the file"
-    )
-    args = find_argument_parser.parse_args(arguments)
+def find_cmd(arguments):
+    find(**vars(arguments))
 
+
+def find(**kwargs):
     try:
         with open(utils.config_path) as config_file:
             config = json.load(config_file)
             ptsched_directory = config["defaultDirectory"]
 
-            if args.directory:
+            if kwargs.get("directory"):
                 print(ptsched_directory)
                 return
 

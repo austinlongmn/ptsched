@@ -1,4 +1,3 @@
-import argparse
 import json
 import uuid
 import sys
@@ -7,19 +6,12 @@ import pathlib
 import ptsched.utils as utils
 
 
-def init(arguments):
-    schedule_argument_parser = argparse.ArgumentParser(
-        "ptsched init", description="Initialize a ptsched directory"
-    )
-    schedule_argument_parser.add_argument(
-        "-s",
-        "--set-default",
-        action="store_true",
-        help="Sets the directory as the default ptsched directory for the user. A new ptsched directory will not be created.",
-    )
-    args = schedule_argument_parser.parse_args(arguments)
+def init_cmd(arguments):
+    init(**vars(arguments))
 
-    if args.set_default:
+
+def init(**kwargs):
+    if kwargs.get("set_default"):
         try:
             with open(utils.config_path) as r_file:
                 config = json.load(r_file)

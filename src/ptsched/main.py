@@ -1,5 +1,4 @@
 import argparse
-import sys
 
 # Syntax of schedule file
 
@@ -21,60 +20,106 @@ import sys
 # - Mon 20
 # Task ABC
 
-from ptsched.parse import parse
-from ptsched.init import init
-from ptsched.schedule import schedule
-from ptsched.find import find
-
-subcommands = {
-    "parse": parse,
-    "init": init,
-    "schedule": schedule,
-    "find": find,
-}
-
-valid_subcommand_description = ""
-for subcommand in subcommands:
-    valid_subcommand_description += subcommand + ", "
-valid_subcommand_description = valid_subcommand_description.removesuffix(", ")
+from ptsched.parse import parse_cmd
+from ptsched.init import init_cmd
+from ptsched.syscal import syscal_cmd
+from ptsched.schedule import schedule_cmd
+from ptsched.find import find_cmd
 
 
 def main():
-    # this is for displaying error and help messages
-    mock_argument_parser = argparse.ArgumentParser(
+    argument_parser = argparse.ArgumentParser(
         prog="ptsched",
         description="ptsched schedules your class work into your calendar.",
     )
-    mock_argument_parser.add_argument(
-        "subcommand",
-        help="The operation to run. Valid options are %s"
-        % valid_subcommand_description,
+    subparsers = argument_parser.add_subparsers(required=True)
+
+    parse_argument_parser = subparsers.add_parser(
+        "parse", description="Parse a ptsched file and output the result"
     )
-    mock_argument_parser.add_argument(
-        "arguments", help="Arguments to pass to the operation", nargs="*"
+    parse_argument_parser.set_defaults(func=parse_cmd)
+    parse_argument_parser.add_argument(
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Parse file, but do not output anything.",
+    )
+    output_group = parse_argument_parser.add_mutually_exclusive_group()
+    output_group.add_argument(
+        "-a",
+        "--ast",
+        action="store_true",
+        help="Outputs the abstract syntax tree of the file",
+    )
+    output_group.add_argument(
+        "-c", "--list-courses", action="store_true", help="List courses in the file"
+    )
+    output_group.add_argument(
+        "-y",
+        "--list-days",
+        action="store_true",
+        help="List days in the file, output format is YYYY-MM-DD",
+    )
+    output_group.add_argument(
+        "-j", "--json", action="store_true", help="Outputs in JSON format"
+    )
+    output_group.add_argument(
+        "-m", "--markdown", action="store_true", help="Outputs in Markdown format"
+    )
+    output_group.add_argument(
+        "-n",
+        "--normal",
+        action="store_true",
+        help="Outputs in normal format (the default)",
+        default=True,
+    )
+    parse_argument_parser.add_argument(
+        "-o", "--output", help="The file to output to (default is STDOUT)"
+    )
+    parse_argument_parser.add_argument(
+        "filename", help="The file to read (default is STDIN)", nargs="?"
     )
 
-    if len(sys.argv) == 1:
-        # this should throw and halt the program
-        mock_argument_parser.parse_args(sys.argv[1:])
-        raise Exception("Unexpectedly continued after faulty arguments.")
-    elif sys.argv[1] == "--help" or sys.argv[1] == "-h":
-        arr = sys.argv[:]
-        arr.append("--help")
-        mock_argument_parser.parse_args(arr)
+    schedule_argument_parser = subparsers.add_parser(
+        "schedule",
+        description="Schedules changed .ptsched files into your calendar via syscal",
+    )
+    schedule_argument_parser.set_defaults(func=schedule_cmd)
+    schedule_argument_parser.add_argument(
+        "-q", "--quiet", action="store_true", help="Do not output extra information"
+    )
+    schedule_argument_parser.add_argument(
+        "--no-vcs", action="store_true", help="Do not commit changes to version control"
+    )
 
-    subcommand = sys.argv[1]
-    arguments = sys.argv[2:]
+    syscal_argument_parser = subparsers.add_parser(
+        "syscal",
+        description="Launches a helper program to write ptsched schedules to the system calendar",
+    )
+    syscal_argument_parser.set_defaults(func=syscal_cmd)
+    syscal_argument_parser.add_argument("filename", help="The schedule file to use")
 
-    if subcommand not in subcommands:
-        print(
-            'Error: invalid subcommand "%s". Valid subcommands are %s'
-            % (subcommand, subcommands),
-            file=sys.stderr,
-        )
-        exit(1)
+    find_argument_parser = subparsers.add_parser(
+        "find", description="Finds the default ptsched file for new additions"
+    )
+    find_argument_parser.set_defaults(func=find_cmd)
+    find_argument_parser.add_argument(
+        "-d", "--directory", help="Gives the directory instead of the file"
+    )
 
-    subcommands[subcommand](arguments)
+    init_argument_parser = subparsers.add_parser(
+        "init", description="Initialize a ptsched directory"
+    )
+    init_argument_parser.set_defaults(func=init_cmd)
+    init_argument_parser.add_argument(
+        "-s",
+        "--set-default",
+        action="store_true",
+        help="Sets the directory as the default ptsched directory for the user. A new ptsched directory will not be created.",
+    )
+
+    args = argument_parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":

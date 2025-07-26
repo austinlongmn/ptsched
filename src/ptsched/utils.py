@@ -70,11 +70,24 @@ def scan(dir=str(pathlib.Path.cwd())):
     return result
 
 
-def update_directory(current):
-    files = set(scan())
-    new = files.difference([x["filename"] for x in current["files"]])
-    for file in new:
-        current["files"].append({"filename": file, "lastScheduled": None})
+def find_files(dir=str(pathlib.Path.cwd())):
+    result = []
+    path = pathlib.Path(dir)
+    for directory, _, files in os.walk(str(path)):
+        if ".ptschedignore" in files:
+            continue
+        for file in files:
+            if file.endswith(".ptsched"):
+                result.append(str(pathlib.Path(directory).joinpath(file)))
+    return result
+
+
+def find_file_pairs(dir=str(pathlib.Path.cwd())):
+    files = find_files(dir)
+    pairs = []
+    for file in files:
+        pairs.append((file, "out/" + file))
+    return pairs
 
 
 def parse_dates(line, result, lineno):

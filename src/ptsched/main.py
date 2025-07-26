@@ -23,12 +23,14 @@ import sys
 
 from ptsched.parse import parse
 from ptsched.init import init
+from ptsched.syscal import syscal
 from ptsched.schedule import schedule
 from ptsched.find import find
 
 subcommands = {
     "parse": parse,
     "init": init,
+    "syscal": syscal,
     "schedule": schedule,
     "find": find,
 }

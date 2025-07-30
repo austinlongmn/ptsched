@@ -1,6 +1,7 @@
 import re
 import sys
 import json
+import lark
 
 import ptsched.utils as utils
 
@@ -15,65 +16,110 @@ def parse_file(file):
 
     lineno = 1
 
-    line = file.readline()
-    while line != "":
-        line = re.sub(r"\s?~.+", "", line)
-        line = line.removesuffix("\n")
-        line = line.strip()
-        if re.match(r"^\d{4}-\d{2}-\d{2}:$", line):
-            raise utils.PTSchedParseException(
-                "Putting dates in this format with a colon at the end of the line could cause conflicts: line %d"
-                % lineno
-            )
-        if line != "":
-            if is_parsing_dates:
-                utils.parse_dates(line, result, lineno)
 
-                is_parsing_dates = False
-            else:
-                re_result = re.match(r"^#\s+(.+?)\s*$", line)
-                if re_result is not None:
-                    course_name = re_result.group(1)
-                    if course_name in result.keys():
-                        raise utils.PTSchedValidationException(
-                            'Cannot redefine course "%s": line %d'
-                            % (course_name, lineno)
-                        )
-                    result["courses"][course_name] = {}
-                elif course_name is not None:
-                    re_result = re.match(r"^-\s+(.+?)\s+(\d?\d)\s*$", line)
-                    if re_result is not None:
-                        try:
-                            date = utils.parse_date(
-                                re_result.group(1),
-                                int(re_result.group(2)),
-                                result["start_date"],
-                                result["end_date"],
-                                lineno,
-                            )
-                        except (ValueError, AttributeError):
-                            raise utils.PTSchedParseException(
-                                "Invalid date at line %d: %s"
-                                % (lineno, line.removesuffix("\n"))
-                            )
-                        date_str = str(date)
-                        if date_str in result["courses"][course_name].keys():
-                            raise utils.PTSchedValidationException(
-                                'Cannot redefine day %s for course "%s": line %d'
-                                % (date_str, course_name, lineno)
-                            )
-                        result["courses"][course_name][date_str] = []
-                    elif date is not None:
-                        date_str = str(date)
-                        result["courses"][course_name][date_str].append(line)
-                    else:
-                        raise utils.PTSchedParseException(
-                            "Expected date, but line did not match: line %d" % lineno
-                        )
-                else:
-                    raise utils.PTSchedParseException(
-                        "Expected course name, but line did not match: line %d" % lineno
-                    )
+    lark = lark.Lark("""
+        %import common.WS -> WS
+        %import common.WS_INLINE -> WSI
+        %import common.NEWLINE -> NEWLINE
+        %import common.INT -> INT
+        %import common.DIGIT -> DIGIT
+        %ignore WS
+
+        newline_separator: NEWLINE
+
+        schedule: metadata newline_separator body
+
+        metadata: date WSI "-" WSI date
+
+        date: day_of_month WSI month WSI year
+        day_of_month: /0-9{1,2}/
+        year: /0-9{4}/
+        month: "January" | "February" | "March" | "April" | "May" | "June" | "July" |
+                "August" | "September" | "October" | "November" | "December" | "Jan" |
+                "Feb" | "Mar" | "Apr" | "May" | "Jun" | "Jul" | "Aug" | "Sep" | "Oct" |
+                "Nov" | "Dec"
+
+        body: (class newline_separator)* class?
+
+        class: class_declaration newline_separator day_list
+        class_declaration: "#" WSI class_identifier
+        class_identifier: /[^\n#-]+/
+
+        day_list: (class_day_tasks newline_separator)* class_day_tasks?
+
+        class_day_tasks: date_declaration newline_separator task_list
+        date_declaration: "-" WSI date_specifier
+        date_specifier: day_of_week WSI day_of_month
+        day_of_week: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" |
+                    "Saturday" | "Sunday" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri" |
+                    "Sat" | "Sun"
+
+        task_list: (task newline_separator)* task?
+
+        task: task_identifier
+        task_identifier: /[^\n#-]+/
+    """)
+
+    print(lark)
+    # line = file.readline()
+    # while line != "":
+    #     line = re.sub(r"\s?~.+", "", line)
+    #     line = line.removesuffix("\n")
+    #     line = line.strip()
+    #     if re.match(r"^\d{4}-\d{2}-\d{2}:$", line):
+    #         raise utils.PTSchedParseException(
+    #             "Putting dates in this format with a colon at the end of the line could cause conflicts: line %d"
+    #             % lineno
+    #         )
+    #     if line != "":
+    #         if is_parsing_dates:
+    #             utils.parse_dates(line, result, lineno)
+
+    #             is_parsing_dates = False
+    #         else:
+    #             re_result = re.match(r"^#\s+(.+?)\s*$", line)
+    #             if re_result is not None:
+    #                 course_name = re_result.group(1)
+    #                 if course_name in result.keys():
+    #                     raise utils.PTSchedValidationException(
+    #                         'Cannot redefine course "%s": line %d'
+    #                         % (course_name, lineno)
+    #                     )
+    #                 result["courses"][course_name] = {}
+    #             elif course_name is not None:
+    #                 re_result = re.match(r"^-\s+(.+?)\s+(\d?\d)\s*$", line)
+    #                 if re_result is not None:
+    #                     try:
+    #                         date = utils.parse_date(
+    #                             re_result.group(1),
+    #                             int(re_result.group(2)),
+    #                             result["start_date"],
+    #                             result["end_date"],
+    #                             lineno,
+    #                         )
+    #                     except (ValueError, AttributeError):
+    #                         raise utils.PTSchedParseException(
+    #                             "Invalid date at line %d: %s"
+    #                             % (lineno, line.removesuffix("\n"))
+    #                         )
+    #                     date_str = str(date)
+    #                     if date_str in result["courses"][course_name].keys():
+    #                         raise utils.PTSchedValidationException(
+    #                             'Cannot redefine day %s for course "%s": line %d'
+    #                             % (date_str, course_name, lineno)
+    #                         )
+    #                     result["courses"][course_name][date_str] = []
+    #                 elif date is not None:
+    #                     date_str = str(date)
+    #                     result["courses"][course_name][date_str].append(line)
+    #                 else:
+    #                     raise utils.PTSchedParseException(
+    #                         "Expected date, but line did not match: line %d" % lineno
+    #                     )
+    #             else:
+    #                 raise utils.PTSchedParseException(
+    #                     "Expected course name, but line did not match: line %d" % lineno
+    #                 )
 
         line = file.readline()
         lineno += 1

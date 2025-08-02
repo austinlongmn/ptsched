@@ -1,105 +1,21 @@
-import lark
+from lark import v_args, Transformer, Lark
+import datetime
 
-parser = lark.Lark("""
-    %import common.WS -> WS
-    %import common.WS_INLINE -> WSI
-    %import common.NEWLINE -> NEWLINE
-    %import common.INT -> INT
-    %import common.DIGIT -> DIGIT
-    %ignore WS
+from ptsched.utils import parse_date
 
-    start: schedule
-    schedule: metadata NEWLINE body
 
-    metadata: date WSI "-" WSI date
+def post_transform(schedule):
+    start_date = schedule['metadata']['start_date']
+    end_date = schedule['metadata']['end_date']
 
-    date: day_of_month WSI month WSI year
-    day_of_month: /\\d{1,2}/
-    year: /\\d{4}/
-    month: january | february | march | april | may | june | july | august | september | october | november | december
-    january: "January" | "Jan"
-    february: "February" | "Feb"
-    march: "March" | "Mar"
-    april: "April" | "Apr"
-    may: "May"
-    june: "June" | "Jun"
-    july: "July" | "Jul"
-    august: "August" | "Aug"
-    september: "September" | "Sep"
-    october: "October" | "Oct"
-    november: "November" | "Nov"
-    december: "December" | "Dec"
+    for class_ in schedule['classes']:
+        for day in class_['days']:
+            date = datetime.date
 
-    body: (class NEWLINE)* class?
+parser = Lark(open("src/ptsched/ptsched.lark").read(), start="schedule", propagate_positions=True)
 
-    class: class_declaration NEWLINE day_list
-    class_declaration: "#" WSI class_identifier
-    class_identifier: /[^\\n]+/
+parsed_tree = parser.parse(open( "tests/test_data/input/fa24/2024-06-18.ptsched" ).read())
 
-    day_list: (class_day_tasks NEWLINE)* class_day_tasks?
+print(parsed_tree.pretty())
 
-    class_day_tasks: date_declaration NEWLINE task_list
-    date_declaration: "-" WSI date_specifier
-    date_specifier: day_of_week WSI day_of_month
-    day_of_week: monday | tuesday | wednesday | thursday | friday | saturday | sunday
-    monday: "Monday" | "Mon"
-    tuesday: "Tuesday" | "Tue"
-    wednesday: "Wednesday" | "Wed"
-    thursday: "Thursday" | "Thu"
-    friday: "Friday" | "Fri"
-    saturday: "Saturday" | "Sat"
-    sunday: "Sunday" | "Sun"
-
-    task_list: (task NEWLINE)* task?
-
-    task: task_identifier
-    task_identifier: /[^\\n]+/
-    """)
-
-parser.parse("""
-        1 July 2024 - 5 July 2024
-
-        # Class Name
-
-        - Mon 1
-        Task 1
-        Task 2
-        Task 3
-
-        - Tue 2
-        Task 1
-        Task 2
-        Task 3
-
-        - Wed 3
-        Task 1
-        Task 2
-        Task 3
-
-        - Thu 4
-        Task-1
-        Task-2
-        Task-3
-
-        # Other Class Name
-
-        - Mon 1
-        Task 1
-        Task 2
-        Task 3
-
-        - Tue 2
-        Task 1
-        Task 2
-        Task 3
-
-        - Wed 3
-        Task 1
-        Task 2
-        Task 3
-
-        - Thu 4
-        Task 1
-        Task 2
-        Task 3
-    """)
+print(ScheduleTransformer().transform(parsed_tree))

@@ -20,3 +20,6 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.12.2",
 ]
+
+[tool.uv.build-backend]
+data = { data = "src/ptsched/data" }

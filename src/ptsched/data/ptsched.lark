@@ -1,16 +1,16 @@
-%import common.WS -> WS
-%import common.WS_INLINE -> WSI
-%import common.NEWLINE -> NEWLINE
+%import common.WS -> _WS
+%import common.WS_INLINE -> _WSI
+%import common.NEWLINE -> _NEWLINE
 %import common.INT -> INT
 %import common.DIGIT -> DIGIT
-%ignore WS
 
-start: schedule
-schedule: metadata NEWLINE body
+_NEWLINE_BREAK: _WS? _NEWLINE _WS?
 
-metadata: date WSI "-" WSI date
+schedule: _WS? metadata _NEWLINE_BREAK body _WS?
 
-date: day_of_month WSI month WSI year
+metadata: _WSI? date _WSI "-" _WSI date _WSI?
+
+date: day_of_month _WSI month _WSI year
 day_of_month: /\d{1,2}/
 year: /\d{4}/
 month: january | february | march | april | may | june | july | august | september | october | november | december
@@ -27,17 +27,17 @@ october: "October" | "Oct"
 november: "November" | "Nov"
 december: "December" | "Dec"
 
-body: (class NEWLINE)* class?
+body: (class_ _NEWLINE_BREAK)* class_?
 
-class: class_declaration NEWLINE day_list
-class_declaration: "#" WSI class_identifier
-class_identifier: /[^\n]+/
+class_: class_declaration _NEWLINE_BREAK day_list
+class_declaration: _WSI? "#" _WSI _class_identifier _WSI?
+_class_identifier: /[^\n]+/
 
-day_list: (class_day_tasks NEWLINE)* class_day_tasks?
+day_list: (class_day_tasks _NEWLINE_BREAK)* class_day_tasks?
 
-class_day_tasks: date_declaration NEWLINE task_list
-date_declaration: "-" WSI date_specifier
-date_specifier: day_of_week WSI day_of_month
+class_day_tasks: date_declaration _NEWLINE_BREAK task_list
+date_declaration: _WSI? "-" _WSI _date_specifier _WSI?
+_date_specifier: day_of_week _WSI day_of_month
 day_of_week: monday | tuesday | wednesday | thursday | friday | saturday | sunday
 monday: "Monday" | "Mon"
 tuesday: "Tuesday" | "Tue"
@@ -47,7 +47,7 @@ friday: "Friday" | "Fri"
 saturday: "Saturday" | "Sat"
 sunday: "Sunday" | "Sun"
 
-task_list: (task NEWLINE)* task?
+task_list: (task _NEWLINE_BREAK)* task?
 
-task: task_identifier
-task_identifier: /[^\n]+/
+task: _task_identifier
+_task_identifier: /[^-#][^\n]*/

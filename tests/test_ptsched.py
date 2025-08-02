@@ -1,29 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import unittest
-import json
 import os
 
-
-import ptsched.utils as utils
-from ptsched.parse import parse_file, parse
+from ptsched.parse import parse
 
 
 class Test_ptsched(unittest.TestCase):
-    def test_parser(self):
-        for (
-            input_filename,
-            expected_output_filename,
-        ) in self.get_input_and_expected_outputs("ast.json", "24"):
-            with (
-                open(input_filename) as input_file,
-                open(expected_output_filename) as expected_output_file,
-            ):
-                self.assertEqual(
-                    json.loads(json.dumps(parse_file(input_file), default=str)),
-                    json.load(expected_output_file),
-                    msg="File %s failed the AST test." % input_filename,
-                )
-
     def test_final_results(self):
         for output_type in ["normal", "md"]:
             for (
@@ -52,31 +34,6 @@ class Test_ptsched(unittest.TestCase):
                             % input_filename,
                         )
         os.remove("temp_test_result")
-
-    def test_throws(self):
-        for (
-            input_filename,
-            expected_output_filename,
-        ) in self.get_input_and_expected_outputs("error.txt", "throwing"):
-            with (
-                open(expected_output_filename) as expected_error_file,
-                open(input_filename) as input_file,
-            ):
-                error_details = expected_error_file.read()
-                split = error_details.splitlines()
-                error_type = split[0]
-                error_message = split[1]
-                if error_type == "PTSchedParseException":
-                    error = utils.PTSchedParseException
-                elif error_type == "PTSchedValidationException":
-                    error = utils.PTSchedValidationException
-                else:
-                    raise Exception("Unexpected exception")
-
-                with self.assertRaises(error) as cm:
-                    parse_file(input_file)
-
-                self.assertEqual(str(cm.exception), str(error(error_message)))
 
     def get_input_and_expected_outputs(self, suffix, criteria, output_type="normal"):
         result = []

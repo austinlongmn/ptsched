@@ -28,7 +28,7 @@ class ScheduleTransformer(Transformer):
         return items
 
     def class_day_tasks(self, items):
-        return {"date_specifier": items[0], "tasks": items[1]}
+        return {"date_specifier": items[0], "tasks": items[1] if len(items) > 1 else []}
 
     def task_list(self, items):
         return items

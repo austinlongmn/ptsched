@@ -35,7 +35,7 @@ _class_identifier: /[^\n]+/
 
 day_list: (class_day_tasks _NEWLINE_BREAK)* class_day_tasks?
 
-class_day_tasks: date_declaration _NEWLINE_BREAK task_list
+class_day_tasks: date_declaration (_NEWLINE_BREAK task_list)?
 date_declaration: _WSI? "-" _WSI _date_specifier _WSI?
 _date_specifier: day_of_week _WSI day_of_month
 day_of_week: monday | tuesday | wednesday | thursday | friday | saturday | sunday
@@ -49,5 +49,5 @@ sunday: "Sunday" | "Sun"
 
 task_list: (task _NEWLINE_BREAK)* task?
 
-task: _task_identifier
+task: _WSI? _task_identifier _WSI?
 _task_identifier: /[^-#][^\n]*/

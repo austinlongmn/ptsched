@@ -1,49 +1,40 @@
-import sys
+from mako.template import Template
 
 
-def output_default(result, outfile):
-    try:
-        counter = 0
-        sorted_days = sorted(result.keys())
-        length = len(sorted_days)
-        for day in sorted_days:
-            print(day + ":\n", file=outfile)
+def render_default(schedule):
+    result = []
+    template = Template("""% for _class in day["classes"]:
+${_class["name"] + ":"}
+        % for task in _class["tasks"]:
+${task}
+        % endfor
+        % if not loop.last:
 
-            sorted_courses = sorted(result[day].keys())
-            counter2 = 0
-            length2 = len(sorted_courses)
-            for course in sorted_courses:
-                print(course + ":", file=outfile)
-                for task in result[day][course]:
-                    print(task, file=outfile)
-                if not (counter >= length - 1 and counter2 >= length2 - 1):
-                    print(file=outfile)
-                counter2 += 1
-            counter += 1
-    finally:
-        if outfile != sys.stdout:
-            outfile.close()
+        % endif
+    % endfor""")
+    for day in schedule["days"]:
+        result.append({"date": day["date"], "content": template.render(day=day)})
+
+    return result
 
 
-def output_markdown(result, outfile):
-    try:
-        counter = 0
-        sorted_days = sorted(result.keys())
-        length = len(sorted_days)
-        for day in sorted_days:
-            print("# Tasks: " + day + "\n", file=outfile)
+def render_markdown(schedule):
+    result = []
+    template = Template("""# Tasks: ${day["date"]}
 
-            sorted_courses = sorted(result[day].keys())
-            counter2 = 0
-            length2 = len(sorted_courses)
-            for course in sorted_courses:
-                print("## " + course + "\n", file=outfile)
-                for task in result[day][course]:
-                    print("- [ ] " + task, file=outfile)
-                if not (counter >= length - 1 and counter2 >= length2 - 1):
-                    print(file=outfile)
-                counter2 += 1
-            counter += 1
-    finally:
-        if outfile != sys.stdout:
-            outfile.close()
+    % for _class in day["classes"]:
+${"##"} ${_class["name"]}
+        % if _class["tasks"]:
+
+        % endif
+        % for task in _class["tasks"]:
+- [ ] ${task}
+        % endfor
+        % if not loop.last:
+
+        % endif
+    % endfor""")
+    for day in schedule["days"]:
+        result.append({"date": day["date"], "content": template.render(day=day)})
+
+    return result

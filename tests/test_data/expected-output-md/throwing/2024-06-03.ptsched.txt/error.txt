@@ -1,2 +1,0 @@
-PTSchedValidationException
-Day of week "Mon" does not match date at line 5

@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "lark>=1.2.2",
+    "mako>=1.3.10",
+]
 
 [project.scripts]
 ptsched = "ptsched:main"
@@ -18,3 +21,6 @@ dev = [
     "pytest>=8.3.4",
     "ruff>=0.12.2",
 ]
+
+[tool.uv.build-backend]
+data = { data = "src/ptsched/data" }

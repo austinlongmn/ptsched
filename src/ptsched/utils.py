@@ -16,7 +16,7 @@ class PTSchedValidationException(PTSchedException):
     pass
 
 
-def parse_date(day_of_week, day_number, range_start, range_end, lineno):
+def parse_date(weekday, day_number, range_start, range_end, lineno):
     if range_start.month == range_end.month:
         month = range_start.month
     else:
@@ -27,30 +27,14 @@ def parse_date(day_of_week, day_number, range_start, range_end, lineno):
     else:
         year = range_start.year if day_number >= range_start.day else range_end.year
 
-    weekday = -1
-    if day_of_week == "Mon":
-        weekday = 0
-    elif day_of_week == "Tue":
-        weekday = 1
-    elif day_of_week == "Wed":
-        weekday = 2
-    elif day_of_week == "Thu":
-        weekday = 3
-    elif day_of_week == "Fri":
-        weekday = 4
-    elif day_of_week == "Sat":
-        weekday = 5
-    elif day_of_week == "Sun":
-        weekday = 6
-
     result = datetime.date(year, month, day_number)
     if weekday == -1:
         raise PTSchedParseException(
-            'Invalid day of week "%s" at line %d' % (day_of_week, lineno)
+            'Invalid day of week "%s" at line %d' % (weekday, lineno)
         )
     if result.weekday() != weekday:
         raise PTSchedValidationException(
-            'Day of week "%s" does not match date at line %d' % (day_of_week, lineno)
+            'Day of week "%s" does not match date at line %d' % (weekday, lineno)
         )
     if not (result >= range_start and result <= range_end):
         raise PTSchedValidationException("Date not in range at line %d" % lineno)

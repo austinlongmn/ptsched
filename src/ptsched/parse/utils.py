@@ -1,5 +1,4 @@
 import importlib.resources
-import datetime
 from typing import Optional
 
 TERMINAL_RED = "\033[31m"
@@ -62,11 +61,3 @@ def display_error(message, meta, file_contents, filename):
     return display_error_line(
         message, meta.line, meta.column, file_contents, filename, meta.end_column
     )
-
-
-def get_dates(start_date: datetime.date, end_date: datetime.date) -> set[datetime.date]:
-    result = set()
-    while start_date <= end_date:
-        result.add(start_date)
-        start_date += datetime.timedelta(days=1)
-    return result

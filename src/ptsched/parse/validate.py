@@ -1,7 +1,14 @@
 import datetime
 import sys
-from ptsched.parse.utils import display_error, get_dates
+from ptsched.utils import get_dates
+from ptsched.parse.utils import display_error
 from typing import List
+from ptsched.structures import (
+    Task,
+    ScheduleTransformed,
+    DayTransformed,
+    SchoolClassTransformed,
+)
 
 WEEKDAYS = [
     "Monday",
@@ -62,8 +69,7 @@ def validate_schedule(schedule, file_contents: str, file_name: str):
             ]
         )
 
-    result = {"metadata": {"start_date": start_date, "end_date": end_date}, "days": []}
-
+    result = ScheduleTransformed(ScheduleTransformed.Metadata(start_date, end_date), [])
     existing_class_names = set()
     required_days = get_dates(start_date, end_date)
     for class_ in schedule["classes"]:
@@ -107,23 +113,23 @@ def validate_schedule(schedule, file_contents: str, file_name: str):
             existing_class_days.add(day_date)
 
             transformed_day = next(
-                (x for x in result["days"] if x["date"] == day_date.isoformat()), None
+                (x for x in result.days if (x.date) == day_date.isoformat()), None
             )
 
             if transformed_day is None:
-                transformed_day = {"date": day_date.isoformat(), "classes": []}
-                result["days"].append(transformed_day)
+                transformed_day = DayTransformed(date=day_date.isoformat(), classes=[])
+                result.days.append(transformed_day)
 
             transformed_class = next(
-                (x for x in transformed_day["classes"] if x["name"] == class_name), None
+                (x for x in transformed_day.classes if x.name == class_name), None
             )
 
             if transformed_class is None:
-                transformed_class = {"name": class_name, "tasks": []}
-                transformed_day["classes"].append(transformed_class)
+                transformed_class = SchoolClassTransformed(name=class_name, tasks=[])
+                transformed_day.classes.append(transformed_class)
 
             for task in day["tasks"]:
-                transformed_class["tasks"].append(task["task"])
+                transformed_class.tasks.append(Task(name=task["task"]))
 
         missing_days = required_days - existing_class_days
         if missing_days:

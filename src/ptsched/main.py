@@ -25,6 +25,7 @@ from ptsched.init import init_cmd
 from ptsched.syscal import syscal_cmd
 from ptsched.schedule import schedule_cmd
 from ptsched.find import find_cmd
+from ptsched.generate import generate_cmd
 
 
 def main():
@@ -116,6 +117,19 @@ def main():
         "--set-default",
         action="store_true",
         help="Sets the directory as the default ptsched directory for the user. A new ptsched directory will not be created.",
+    )
+
+    generate_argument_parser = subparsers.add_parser(
+        "generate", description="Generates a ptsched file from a template"
+    )
+    generate_argument_parser.set_defaults(func=generate_cmd)
+    generate_argument_parser.add_argument("-o", "--outfile", help="Output file")
+    generate_argument_parser.add_argument(
+        "-c",
+        "--class",
+        help="A class to generate output for",
+        action="append",
+        dest="classes",
     )
 
     args = argument_parser.parse_args()

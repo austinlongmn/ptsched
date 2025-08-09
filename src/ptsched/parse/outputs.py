@@ -18,7 +18,8 @@ ${task.name}
         % if not loop.last:
 
         % endif
-    % endfor""")
+    % endfor
+""")
 
     return template.render(schedule=schedule)
 
@@ -42,6 +43,7 @@ ${"##"} ${_class.name}
         % if not loop.last:
 
         % endif
-    % endfor""")
+    % endfor
+""")
 
     return template.render(schedule=schedule)

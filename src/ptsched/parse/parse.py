@@ -89,6 +89,6 @@ def parse(**kwargs):
         return
 
     if kwargs.get("markdown"):
-        print(outputs.render_markdown(schedule), file=outfile)
+        print(outputs.render_markdown(schedule), file=outfile, end="")
     elif kwargs.get("normal"):
-        print(outputs.render_default(schedule), file=outfile)
+        print(outputs.render_default(schedule), file=outfile, end="")

@@ -9,6 +9,18 @@ from ptsched.parse.error_handling import lark_error_handler
 from lark.exceptions import UnexpectedInput
 
 
+def parse_str_display_errors(contents, filename):
+    try:
+        schedule = parse_str(contents, filename)
+    except UnexpectedInput as e:
+        print(lark_error_handler(e, contents, filename), file=sys.stderr)
+        raise
+    except ValidationErrors as e:
+        e.display_errors()
+        raise
+    return schedule
+
+
 def parse_str(contents, filename):
     result = {}
     result["courses"] = {}
@@ -40,17 +52,15 @@ def parse(**kwargs):
     file_contents = infile.read()
 
     try:
-        schedule = parse_str(file_contents, filename)
-    except UnexpectedInput as e:
-        print(lark_error_handler(e, file_contents, infile.name), file=sys.stderr)
-        exit(1)
-    except ValidationErrors as e:
-        e.display_errors()
+        schedule = parse_str_display_errors(
+            file_contents,
+            infile.name,
+        )
+    except (UnexpectedInput, ValidationErrors):
         exit(1)
     finally:
         if infile != sys.stdin:
             infile.close()
-
     output_filename = kwargs.get("output")
     if output_filename is not None:
         try:
@@ -79,14 +89,6 @@ def parse(**kwargs):
         return
 
     if kwargs.get("markdown"):
-        for idx, day in enumerate(outputs.render_markdown(schedule)):
-            print(("\n" if idx > 0 else "") + day["content"], file=outfile, end="")
-        return
+        print(outputs.render_markdown(schedule), file=outfile)
     elif kwargs.get("normal"):
-        for idx, day in enumerate(outputs.render_default(schedule)):
-            print(
-                ("\n" if idx > 0 else "") + day["date"] + ":\n\n" + day["content"],
-                file=outfile,
-                end="",
-            )
-        return
+        print(outputs.render_default(schedule), file=outfile)

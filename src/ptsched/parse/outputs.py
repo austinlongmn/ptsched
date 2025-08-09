@@ -3,39 +3,45 @@ from ptsched.structures import ScheduleTransformed
 
 
 def render_default(schedule: ScheduleTransformed):
-    result = []
-    template = Template("""% for _class in day.classes:
+    template = Template("""%for day in schedule.days:
+${day.date}:
+
+            % for _class in day.classes:
 ${_class.name + ":"}
-        % for task in _class.tasks:
+            % for task in _class.tasks:
 ${task.name}
+            % endfor
+            % if not loop.last:
+
+            % endif
         % endfor
         % if not loop.last:
 
         % endif
     % endfor""")
-    for day in schedule.days:
-        result.append({"date": day.date, "content": template.render(day=day)})
 
-    return result
+    return template.render(schedule=schedule)
 
 
 def render_markdown(schedule: ScheduleTransformed):
-    result = []
-    template = Template("""# Tasks: ${day.date}
+    template = Template("""%for day in schedule.days:
+# Tasks: ${day.date}
 
-    % for _class in day.classes:
+        % for _class in day.classes:
 ${"##"} ${_class.name}
-        % if _class.tasks:
+            % if _class.tasks:
 
-        % endif
-        % for task in _class.tasks:
+            % endif
+            % for task in _class.tasks:
 - [ ] ${task.name}
+            % endfor
+            % if not loop.last:
+
+            % endif
         % endfor
         % if not loop.last:
 
         % endif
     % endfor""")
-    for day in schedule.days:
-        result.append({"date": day.date, "content": template.render(day=day)})
 
-    return result
+    return template.render(schedule=schedule)

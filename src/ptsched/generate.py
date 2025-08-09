@@ -1,4 +1,5 @@
 import sys
+import os.path
 from ptsched.parse import generate_file
 from ptsched.utils import get_dates
 from ptsched.structures import ScheduleReverse, SchoolClassReverse, DayReverse
@@ -10,8 +11,14 @@ def generate_cmd(arguments):
 
 
 def generate(**kwargs):
+    date_range = get_date_range()
     filename = kwargs.get("outfile")
     if filename is not None:
+        # Check if filename points to a directory
+        if os.path.isdir(filename):
+            start_date_str = date_range[0].strftime("%Y-%m-%d")
+            filename = os.path.join(filename, f"{start_date_str}.ptsched")
+
         try:
             outfile = open(filename, "w")
         except OSError as error:
@@ -21,7 +28,6 @@ def generate(**kwargs):
         outfile = sys.stdout
 
     try:
-        date_range = get_date_range()
         print(
             generate_file(
                 ScheduleReverse(

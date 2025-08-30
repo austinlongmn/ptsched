@@ -30,23 +30,6 @@ def update_str(new_schedule, current_schedule):
                 output_string += line[2:] + "\n"
             current_line += 1
 
-    print(f"""
-INPUT:
-
-
-{new_schedule}
-
-
-CURRENT:
-
-
-{current_schedule}
-
-
-OUTPUT:
-
-{output_string}
-        """)
     return output_string
 
 
@@ -57,8 +40,6 @@ def update_file(new_schedule, current_schedule_file):
             current_schedule = file.read()
     except FileNotFoundError:
         current_schedule = ""
-
-    print(f"Contents of {current_schedule_file} is {current_schedule}")
 
     output_string = update_str(new_schedule, current_schedule)
 
@@ -73,8 +54,6 @@ def update(schedule_file, output_file):
 
     with open(schedule_file, "r") as file:
         new_schedule = file.read()
-
-    print(f"{schedule_file}, {output_file}")
 
     schedule = parse_str_display_errors(new_schedule, schedule_file)
 

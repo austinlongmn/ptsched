@@ -64,4 +64,4 @@ def get_date_range():
     else:
         next_monday = today
     next_friday = next_monday + timedelta(days=(4 - next_monday.weekday()) % 7)
-    return (next_monday, next_friday)
+    return (today, next_friday)
